@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1042039723796",
+    "project_id": "oraculo-89b67",
+    "storage_bucket": "oraculo-89b67.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1042039723796:android:9eb42d239ec4b1a7a29401",
+        "android_client_info": {
+          "package_name": "com.example.oraculo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcCA2KlLtwPpGqc5gJoHK6bUxKlkLPgss"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

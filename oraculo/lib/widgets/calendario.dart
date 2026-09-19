@@ -143,7 +143,7 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
                         // Linha Divisora Branca Suave
                         Container(
                           height: 1,
-                          color: Colors.white.withOpacity(0.4),
+                          color: Colors.white.withValues(alpha: 0.4),
                         ),
 
                         const SizedBox(height: 20),
@@ -260,7 +260,7 @@ class _WeekdayText extends StatelessWidget {
         text,
         textAlign: TextAlign.center,
         style: TextStyle(
-          color: Colors.white.withOpacity(0.75),
+          color: Colors.white.withValues(alpha: 0.75),
           fontWeight: FontWeight.bold,
           fontSize: 13,
         ),

@@ -148,7 +148,7 @@ class NotesAndInsightsPage extends StatelessWidget {
       return Image.network(
         path,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const Icon(
+        errorBuilder: (_, _, _) => const Icon(
           Icons.broken_image,
           color: Colors.grey,
         ),
@@ -158,7 +158,7 @@ class NotesAndInsightsPage extends StatelessWidget {
     return Image.asset(
       path,
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => const Icon(
+      errorBuilder: (_, _, _) => const Icon(
         Icons.image_not_supported,
         color: Colors.grey,
       ),
