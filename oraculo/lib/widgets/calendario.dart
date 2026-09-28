@@ -1,5 +1,22 @@
 import 'package:flutter/material.dart';
 
+// Modelo de Dados para as Tarefas
+class TaskModel {
+  final String title;
+  final String time;
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBgColor;
+
+  const TaskModel({
+    required this.title,
+    required this.time,
+    required this.icon,
+    required this.iconColor,
+    required this.iconBgColor,
+  });
+}
+
 class DatesAndTasksPage extends StatefulWidget {
   const DatesAndTasksPage({super.key});
 
@@ -10,8 +27,49 @@ class DatesAndTasksPage extends StatefulWidget {
 class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
   int selectedDay = 10;
 
+  // Mapa com o Dia como chave e Lista de Tarefas como valor
+  final Map<int, List<TaskModel>> tasksByDay = {
+    10: [
+      const TaskModel(
+        title: 'Redação: Inteligência Artificial',
+        time: '14:00',
+        icon: Icons.article_rounded,
+        iconColor: Color(0xFFFFAB8C),
+        iconBgColor: Color(0xFFFFF0EA),
+      ),
+      const TaskModel(
+        title: 'Simulado de Matemática',
+        time: '09:30',
+        icon: Icons.functions_rounded,
+        iconColor: Color(0xFF9EE08F),
+        iconBgColor: Color(0xFFECFCE8),
+      ),
+    ],
+    12: [
+      const TaskModel(
+        title: 'Leitura: Dom Casmurro',
+        time: '18:00',
+        icon: Icons.menu_book_rounded,
+        iconColor: Color(0xFFFCD068),
+        iconBgColor: Color(0xFFFFF7E3),
+      ),
+    ],
+    15: [
+      const TaskModel(
+        title: 'Reunião de Grupo',
+        time: '16:30',
+        icon: Icons.groups_rounded,
+        iconColor: Color(0xFF7CA1FF),
+        iconBgColor: Color(0xFFEFF4FF),
+      ),
+    ],
+  };
+
   @override
   Widget build(BuildContext context) {
+    // Busca tarefas do dia selecionado
+    final currentTasks = tasksByDay[selectedDay] ?? [];
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -20,7 +78,7 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
           child: Column(
             children: [
               // ==========================================================
-              // BARRA SUPERIOR (Pílula Coral/Salmão Pastel + Ícone 'X')
+              // BARRA SUPERIOR
               // ==========================================================
               Row(
                 children: [
@@ -29,7 +87,7 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
                       height: 48,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFAB8C), // Cor exata da pílula
+                        color: const Color(0xFFFFAB8C),
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: const Text(
@@ -64,7 +122,7 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE5D9FA), // Lilás pastel exato da imagem
+                    color: const Color(0xFFE5D9FA),
                     borderRadius: BorderRadius.circular(36),
                   ),
                   child: SingleChildScrollView(
@@ -72,7 +130,7 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Mês e Setas de Navegação
+                        // Mês e Setas
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -96,7 +154,7 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
 
                         const SizedBox(height: 20),
 
-                        // Siglas dos Dias da Semana
+                        // Siglas da Semana
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: const [
@@ -125,22 +183,24 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
                           itemBuilder: (context, index) {
                             final day = index + 1;
                             final isSelected = day == selectedDay;
+                            final hasTasks = tasksByDay.containsKey(day);
 
                             return CalendarDay(
                               day: day,
                               selected: isSelected,
+                              hasTask: hasTasks, // Passa a informação se há tarefa
                               onTap: () {
                                 setState(() {
                                   selectedDay = day;
                                 });
-                              },
+                              }, hasEvent: false,
                             );
                           },
                         ),
 
                         const SizedBox(height: 20),
 
-                        // Linha Divisora Branca Suave
+                        // Linha Divisora
                         Container(
                           height: 1,
                           color: Colors.white.withValues(alpha: 0.4),
@@ -148,10 +208,10 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
 
                         const SizedBox(height: 20),
 
-                        // Título Próximas Entregas
-                        const Text(
-                          'Próximas Entregas',
-                          style: TextStyle(
+                        // Título Dinâmico de Entregas
+                        Text(
+                          'Próximas Entregas ($selectedDay/06)',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -160,34 +220,38 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
 
                         const SizedBox(height: 16),
 
-                        // Cards de Tarefas da Lista
-                        const _TaskCard(
-                          icon: Icons.article_rounded,
-                          iconColor: Color(0xFFFFAB8C),
-                          iconBgColor: Color(0xFFFFF0EA),
-                          title: 'Redação: Inteligência ...',
-                          time: '14:00',
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        const _TaskCard(
-                          icon: Icons.functions_rounded,
-                          iconColor: Color(0xFF9EE08F),
-                          iconBgColor: Color(0xFFECFCE8),
-                          title: 'Simulado de Matemática',
-                          time: '09:30',
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        const _TaskCard(
-                          icon: Icons.menu_book_rounded,
-                          iconColor: Color(0xFFFCD068),
-                          iconBgColor: Color(0xFFFFF7E3),
-                          title: 'Leitura: Dom Casmurro',
-                          time: '18:00',
-                        ),
+                        // Lista Dinâmica de Tarefas do Dia Selecionado
+                        if (currentTasks.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 20),
+                            child: Center(
+                              child: Text(
+                                'Nenhuma entrega para este dia 🎉',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          )
+                        else
+                          ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: currentTasks.length,
+                            separatorBuilder: (context, index) => const SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              final task = currentTasks[index];
+                              return _TaskCard(
+                                icon: task.icon,
+                                iconColor: task.iconColor,
+                                iconBgColor: task.iconBgColor,
+                                title: task.title,
+                                time: task.time,
+                              );
+                            },
+                          ),
                       ],
                     ),
                   ),
@@ -202,18 +266,20 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
 }
 
 // ============================================================
-// DIA DO CALENDÁRIO
+// DIA DO CALENDÁRIO COM PONTO INDICADOR
 // ============================================================
 class CalendarDay extends StatelessWidget {
   final int day;
   final bool selected;
+  final bool hasTask;
   final VoidCallback? onTap;
 
   const CalendarDay({
     super.key,
     required this.day,
     required this.selected,
-    this.onTap,
+    this.hasTask = false,
+    this.onTap, required bool hasEvent,
   });
 
   @override
@@ -222,23 +288,41 @@ class CalendarDay extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Center(
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: selected ? const Color(0xFFFFAB8C) : Colors.transparent, // Coral Pastel
-            shape: BoxShape.circle,
-          ),
+        child: Stack(
           alignment: Alignment.center,
-          child: Text(
-            day.toString(),
-            style: TextStyle(
-              color: selected ? Colors.white : const Color(0xFF333333),
-              fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-              fontSize: 15,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: selected ? const Color(0xFFFFAB8C) : Colors.transparent,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                day.toString(),
+                style: TextStyle(
+                  color: selected ? Colors.white : const Color(0xFF333333),
+                  fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                  fontSize: 15,
+                ),
+              ),
             ),
-          ),
+            // Ponto indicador de pendência abaixo do número
+            if (hasTask)
+              Positioned(
+                bottom: 3,
+                child: Container(
+                  width: 4,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: selected ? Colors.white : const Color(0xFFFFAB8C),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
