@@ -1,39 +1,75 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // ==========================================================
-// MODELO DE NOTA
+// CONSTANTES DE COR E TEMA
 // ==========================================================
 
-class Note {
+const Color _lilac = Color(0xFFEADBFF);
+const Color _orange = Color(0xFFFFB08E);
+const Color _darkPurple = Color(0xFF594A6D);
+
+// ==========================================================
+// MODELO DE NOTA (FIREBASE CLOUD FIRESTORE)
+// ==========================================================
+
+class NoteItem {
+  final String id;
   final String title;
   final String content;
   final DateTime updatedAt;
+  final DateTime createdAt;
 
-  Note({required this.title, required this.content, DateTime? updatedAt})
-    : updatedAt = updatedAt ?? DateTime.now();
+  NoteItem({
+    required this.id,
+    required this.title,
+    required this.content,
+    required this.updatedAt,
+    required this.createdAt,
+  });
 
-  Map<String, dynamic> toJson() {
-    return {
-      'title': title,
-      'content': content,
-      'updatedAt': updatedAt.toIso8601String(),
-    };
-  }
+  /// Constrói uma instância a partir de um documento do Cloud Firestore.
+  /// Trata possíveis valores nulos durante estimativas locais de latência (serverTimestamp).
+  factory NoteItem.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data() ?? {};
+    final updateTimestamp = data['updatedAt'] as Timestamp?;
+    final createTimestamp = data['createdAt'] as Timestamp?;
 
-  factory Note.fromJson(Map<String, dynamic> json) {
-    return Note(
-      title: json['title'] ?? '',
-      content: json['content'] ?? '',
-      updatedAt: DateTime.tryParse(json['updatedAt'] ?? '') ?? DateTime.now(),
+    return NoteItem(
+      id: doc.id,
+      title: (data['title'] as String?)?.trim() ?? '',
+      content: (data['content'] as String?)?.trim() ?? '',
+      updatedAt: updateTimestamp?.toDate() ?? DateTime.now(),
+      createdAt: createTimestamp?.toDate() ?? DateTime.now(),
     );
   }
 }
 
 // ==========================================================
-// TELA PRINCIPAL
+// RESULTADO DO EDITOR DE NOTAS
+// ==========================================================
+
+enum NoteEditorAction { save, delete }
+
+class NoteEditorResult {
+  final NoteEditorAction action;
+  final String title;
+  final String content;
+
+  const NoteEditorResult.save({
+    required this.title,
+    required this.content,
+  }) : action = NoteEditorAction.save;
+
+  const NoteEditorResult.delete()
+      : action = NoteEditorAction.delete,
+        title = '',
+        content = '';
+}
+
+// ==========================================================
+// TELA PRINCIPAL: NOTAS E INSIGHTS
 // ==========================================================
 
 class NotesAndInsightsPage extends StatefulWidget {
@@ -44,57 +80,41 @@ class NotesAndInsightsPage extends StatefulWidget {
 }
 
 class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
-  static const Color lilac = Color(0xFFEADBFF);
-  static const Color orange = Color(0xFFFFB08E);
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  List<Note> notes = [];
-  bool isLoading = true;
+  /// Retorna a referência da subcoleção de notas do usuário autenticado atual:
+  /// users/{uid}/notes
+  CollectionReference<Map<String, dynamic>>? _getUserNotesCollection() {
+    final user = _auth.currentUser;
+    if (user == null) return null;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadNotes();
+    return _firestore.collection('users').doc(user.uid).collection('notes');
   }
 
-  // Carrega as notas salvas no celular.
-  Future<void> _loadNotes() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedNotes = prefs.getString('user_notes');
-
-    if (savedNotes != null) {
-      try {
-        final List<dynamic> decoded = jsonDecode(savedNotes);
-
-        notes = decoded
-            .map((item) => Note.fromJson(Map<String, dynamic>.from(item)))
-            .toList();
-      } catch (_) {
-        notes = [];
-      }
-    }
-
-    if (mounted) {
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
-
-  // Salva todas as notas no armazenamento local.
-  Future<void> _saveNotes() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    await prefs.setString(
-      'user_notes',
-      jsonEncode(notes.map((note) => note.toJson()).toList()),
+  /// Exibe um SnackBar informativo ou de erro.
+  void _showFeedback(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.redAccent : _darkPurple,
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
-  // Abre o editor de uma nota existente ou de uma nova nota.
-  Future<void> _openNote({int? index}) async {
-    final Note? existingNote = index != null ? notes[index] : null;
+  /// Abre a tela de edição para criar uma nova nota ou atualizar uma existente.
+  Future<void> _openNote({NoteItem? existingNote}) async {
+    final collection = _getUserNotesCollection();
+    if (collection == null) {
+      _showFeedback('Você precisa estar autenticado para gerenciar notas.', isError: true);
+      return;
+    }
 
-    final result = await Navigator.push<dynamic>(
+    // Navega para o editor aguardando o resultado estruturado
+    final NoteEditorResult? result = await Navigator.push<NoteEditorResult>(
       context,
       MaterialPageRoute(
         builder: (_) => NoteEditorPage(initialNote: existingNote),
@@ -103,28 +123,49 @@ class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
 
     if (!mounted || result == null) return;
 
-    setState(() {
-      if (result == 'delete') {
-        if (index != null) {
-          notes.removeAt(index);
+    try {
+      if (result.action == NoteEditorAction.delete) {
+        if (existingNote != null) {
+          await collection.doc(existingNote.id).delete();
+          _showFeedback('Nota excluída com sucesso.');
         }
-      } else if (result is Note) {
-        if (index != null) {
-          notes[index] = result;
+      } else if (result.action == NoteEditorAction.save) {
+        if (existingNote == null) {
+          // Criação de nova nota
+          await collection.add({
+            'title': result.title,
+            'content': result.content,
+            'createdAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+          _showFeedback('Nota criada com sucesso!');
         } else {
-          notes.insert(0, result);
+          // Edição de nota existente
+          await collection.doc(existingNote.id).update({
+            'title': result.title,
+            'content': result.content,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+          _showFeedback('Nota atualizada com sucesso!');
         }
-
-        // Mostra as notas mais recentes primeiro.
-        notes.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
       }
-    });
-
-    await _saveNotes();
+    } on FirebaseException catch (e) {
+      String errorMessage = 'Erro ao processar nota no Firebase.';
+      if (e.code == 'permission-denied') {
+        errorMessage = 'Permissão negada. Verifique as regras de segurança do Firestore.';
+      } else if (e.code == 'unavailable') {
+        errorMessage = 'Sem conexão com o Firebase. As alterações serão sincronizadas quando houver rede.';
+      }
+      _showFeedback(errorMessage, isError: true);
+    } catch (_) {
+      _showFeedback('Ocorreu um erro inesperado ao salvar a nota.', isError: true);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final collection = _getUserNotesCollection();
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -132,19 +173,22 @@ class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Column(
             children: [
-              // Barra superior.
+              // ------------------------------------------------------
+              // BARRA SUPERIOR
+              // ------------------------------------------------------
               Row(
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, color: orange, size: 28),
+                    icon: const Icon(Icons.close, color: _orange, size: 28),
+                    tooltip: 'Voltar',
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Container(
                       height: 40,
                       decoration: BoxDecoration(
-                        color: orange,
+                        color: _orange,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: const Row(
@@ -173,13 +217,15 @@ class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
 
               const SizedBox(height: 32),
 
-              // Painel de notas.
+              // ------------------------------------------------------
+              // PAINEL PRINCIPAL LILÁS
+              // ------------------------------------------------------
               Expanded(
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: lilac,
+                    color: _lilac,
                     borderRadius: BorderRadius.circular(36),
                   ),
                   child: Column(
@@ -197,79 +243,67 @@ class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
                       const SizedBox(height: 20),
 
                       Expanded(
-                        child: isLoading
-                            ? const Center(child: CircularProgressIndicator())
-                            : GridView.builder(
-                                physics: const BouncingScrollPhysics(),
-                                itemCount: notes.length < 6 ? 6 : notes.length,
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 2,
-                                      crossAxisSpacing: 16,
-                                      mainAxisSpacing: 16,
-                                      childAspectRatio: 0.85,
-                                    ),
-                                itemBuilder: (context, index) {
-                                  final bool hasNote = index < notes.length;
+                        child: collection == null
+                            ? _buildUnauthenticatedState()
+                            : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                                stream: collection
+                                    .orderBy('updatedAt', descending: true)
+                                    .snapshots(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.hasError) {
+                                    return _buildErrorState(snapshot.error);
+                                  }
 
-                                  return Material(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(20),
-                                    clipBehavior: Clip.antiAlias,
-                                    child: InkWell(
-                                      onTap: () => _openNote(
-                                        index: hasNote ? index : null,
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const Center(
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
                                       ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(16),
-                                        child: hasNote
-                                            ? Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    notes[index].title
-                                                            .trim()
-                                                            .isEmpty
-                                                        ? 'Sem título'
-                                                        : notes[index].title,
-                                                    maxLines: 2,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    style: const TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color: Color(0xFF594A6D),
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 10),
-                                                  Expanded(
-                                                    child: Text(
-                                                      notes[index].content,
-                                                      maxLines: 7,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      style: const TextStyle(
-                                                        fontSize: 13,
-                                                        color: Colors.black54,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  Text(
-                                                    '${notes[index].updatedAt.day.toString().padLeft(2, '0')}/'
-                                                    '${notes[index].updatedAt.month.toString().padLeft(2, '0')}/'
-                                                    '${notes[index].updatedAt.year}',
-                                                    style: const TextStyle(
-                                                      fontSize: 11,
-                                                      color: Colors.grey,
-                                                    ),
-                                                  ),
-                                                ],
-                                              )
-                                            : const SizedBox.expand(),
-                                      ),
-                                    ),
+                                    );
+                                  }
+
+                                  final docs = snapshot.data?.docs ?? [];
+                                  final List<NoteItem> notes = docs
+                                      .map((doc) => NoteItem.fromFirestore(doc))
+                                      .toList();
+
+                                  final int totalCards =
+                                      notes.length < 6 ? 6 : notes.length;
+
+                                  return GridView.builder(
+                                    physics: const BouncingScrollPhysics(),
+                                    itemCount: totalCards,
+                                    gridDelegate:
+                                        const SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: 2,
+                                          crossAxisSpacing: 16,
+                                          mainAxisSpacing: 16,
+                                          childAspectRatio: 0.85,
+                                        ),
+                                    itemBuilder: (context, index) {
+                                      final bool hasNote = index < notes.length;
+
+                                      return Material(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(20),
+                                        clipBehavior: Clip.antiAlias,
+                                        child: InkWell(
+                                          onTap: () => _openNote(
+                                            existingNote:
+                                                hasNote ? notes[index] : null,
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(16),
+                                            child: hasNote
+                                                ? _buildNoteCardContent(
+                                                    notes[index],
+                                                  )
+                                                : _buildEmptyCardContent(),
+                                          ),
+                                        ),
+                                      );
+                                    },
                                   );
                                 },
                               ),
@@ -283,12 +317,161 @@ class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
         ),
       ),
 
-      // Botão para criar uma nova nota.
+      // Botão flutuante para adicionar nova nota
       floatingActionButton: FloatingActionButton(
-        onPressed: isLoading ? null : () => _openNote(),
-        backgroundColor: orange,
+        onPressed: () => _openNote(),
+        backgroundColor: _orange,
         foregroundColor: Colors.white,
+        tooltip: 'Criar nota',
         child: const Icon(Icons.add, size: 30),
+      ),
+    );
+  }
+
+  /// Conteúdo do cartão com dados da nota preenchida.
+  Widget _buildNoteCardContent(NoteItem note) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          note.title.trim().isEmpty ? 'Sem título' : note.title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: _darkPurple,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Expanded(
+          child: Text(
+            note.content.trim().isEmpty
+                ? 'Nota sem conteúdo adicional...'
+                : note.content,
+            maxLines: 7,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 13,
+              color: note.content.trim().isEmpty ? Colors.grey : Colors.black87,
+            ),
+          ),
+        ),
+        Text(
+          '${note.updatedAt.day.toString().padLeft(2, '0')}/'
+          '${note.updatedAt.month.toString().padLeft(2, '0')}/'
+          '${note.updatedAt.year}',
+          style: const TextStyle(fontSize: 11, color: Colors.grey),
+        ),
+      ],
+    );
+  }
+
+  /// Conteúdo do cartão vazio da grade (espaço reservado para nova nota).
+  Widget _buildEmptyCardContent() {
+    return Center(
+      child: Icon(
+        Icons.add_rounded,
+        size: 32,
+        color: _orange.withValues(alpha: 0.5),
+      ),
+    );
+  }
+
+  /// Estado exibido caso o usuário não esteja autenticado no Firebase.
+  Widget _buildUnauthenticatedState() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.lock_outline_rounded,
+            color: Colors.white,
+            size: 48,
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Usuário não autenticado',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Faça login na tela principal para sincronizar suas anotações com segurança.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white70, fontSize: 13),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: _darkPurple,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: const Text('Voltar ao Início'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Estado de erro de permissão ou conexão com Firestore.
+  Widget _buildErrorState(dynamic error) {
+    String message = 'Ocorreu um erro ao carregar as notas.';
+    if (error is FirebaseException) {
+      if (error.code == 'permission-denied') {
+        message = 'Acesso negado: verifique as regras de segurança do Firestore no Firebase Console.';
+      } else if (error.code == 'unavailable') {
+        message = 'Serviço temporariamente indisponível. Verifique sua conexão com a internet.';
+      }
+    }
+
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.cloud_off_rounded,
+            color: Colors.white,
+            size: 46,
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Falha na sincronização',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => setState(() {}),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: _darkPurple,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: const Text('Tentar novamente'),
+          ),
+        ],
       ),
     );
   }
@@ -299,7 +482,7 @@ class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
 // ==========================================================
 
 class NoteEditorPage extends StatefulWidget {
-  final Note? initialNote;
+  final NoteItem? initialNote;
 
   const NoteEditorPage({super.key, this.initialNote});
 
@@ -308,9 +491,6 @@ class NoteEditorPage extends StatefulWidget {
 }
 
 class _NoteEditorPageState extends State<NoteEditorPage> {
-  static const Color lilac = Color(0xFFEADBFF);
-  static const Color orange = Color(0xFFFFB08E);
-
   late final TextEditingController _titleController;
   late final TextEditingController _contentController;
 
@@ -340,16 +520,53 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
 
     if (title.isEmpty && content.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Escreva algo antes de salvar.')),
+        const SnackBar(
+          content: Text('Escreva algo antes de salvar.'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
 
-    Navigator.pop(context, Note(title: title, content: content));
+    Navigator.pop(
+      context,
+      NoteEditorResult.save(title: title, content: content),
+    );
   }
 
-  void _deleteNote() {
-    Navigator.pop(context, 'delete');
+  Future<void> _confirmDelete() async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text('Excluir nota?'),
+          content: const Text(
+            'Esta ação não pode ser desfeita. A nota será excluída permanentemente.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx, false),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(dialogCtx, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Excluir'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm == true && mounted) {
+      Navigator.pop(context, const NoteEditorResult.delete());
+    }
   }
 
   @override
@@ -363,12 +580,13 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         elevation: 0,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back, color: orange),
+          icon: const Icon(Icons.arrow_back, color: _orange),
+          tooltip: 'Voltar',
         ),
         title: Text(
           isEditing ? 'Editar nota' : 'Nova nota',
           style: const TextStyle(
-            color: Color(0xFF594A6D),
+            color: _darkPurple,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -376,73 +594,79 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
           IconButton(
             tooltip: 'Salvar nota',
             onPressed: _saveNote,
-            icon: const Icon(Icons.check, color: orange, size: 28),
+            icon: const Icon(Icons.check, color: _orange, size: 28),
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            TextField(
-              controller: _titleController,
-              maxLength: 80,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(
-                hintText: 'Título da nota',
-                counterText: '',
-                filled: true,
-                fillColor: lilac.withValues(alpha: 0.35),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-
-            const SizedBox(height: 16),
-
-            Expanded(
-              child: TextField(
-                controller: _contentController,
-                expands: true,
-                minLines: null,
-                maxLines: null,
-                textAlignVertical: TextAlignVertical.top,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              TextField(
+                controller: _titleController,
+                maxLength: 80,
                 textCapitalization: TextCapitalization.sentences,
-                keyboardType: TextInputType.multiline,
                 decoration: InputDecoration(
-                  hintText: 'Escreva suas ideias aqui...',
+                  hintText: 'Título da nota',
+                  counterText: '',
                   filled: true,
-                  fillColor: lilac.withValues(alpha: 0.25),
-                  contentPadding: const EdgeInsets.all(20),
+                  fillColor: _lilac.withValues(alpha: 0.35),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide.none,
                   ),
                 ),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: _darkPurple,
+                ),
               ),
-            ),
 
-            if (isEditing) ...[
               const SizedBox(height: 16),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: _deleteNote,
-                  icon: const Icon(
-                    Icons.delete_outline,
-                    color: Colors.redAccent,
-                  ),
-                  label: const Text(
-                    'Excluir nota',
-                    style: TextStyle(color: Colors.redAccent),
+
+              Expanded(
+                child: TextField(
+                  controller: _contentController,
+                  expands: true,
+                  minLines: null,
+                  maxLines: null,
+                  textAlignVertical: TextAlignVertical.top,
+                  textCapitalization: TextCapitalization.sentences,
+                  keyboardType: TextInputType.multiline,
+                  decoration: InputDecoration(
+                    hintText: 'Escreva suas ideias aqui...',
+                    filled: true,
+                    fillColor: _lilac.withValues(alpha: 0.25),
+                    contentPadding: const EdgeInsets.all(20),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
                 ),
               ),
+
+              if (isEditing) ...[
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: _confirmDelete,
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: Colors.redAccent,
+                    ),
+                    label: const Text(
+                      'Excluir nota',
+                      style: TextStyle(color: Colors.redAccent),
+                    ),
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
