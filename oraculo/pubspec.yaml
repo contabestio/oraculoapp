@@ -1,4 +1,3 @@
-
 name: oraculo
 description: "A new Flutter project."
 publish_to: 'none'
@@ -24,3 +23,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  # Add your assets below the flutter section
+  assets:
+    - assets/background.png

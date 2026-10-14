@@ -394,240 +394,245 @@ class _DashboardPageState extends State<DashboardPage> {
           // ======================================================
           // CONTEÚDO PRINCIPAL
           // ======================================================
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 160),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+         SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 48, 24, 160),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // CABEÇALHO
+              Row(
                 children: [
-                  // CABEÇALHO
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: _updateProfilePhotoDialog,
-                        child: Stack(
-                          children: [
-                            CircleAvatar(
-                              radius: 36,
-                              backgroundColor: const Color(0xFFE4D1FF),
-                              backgroundImage: (userPhotoUrl != null && userPhotoUrl!.isNotEmpty)
-                                  ? NetworkImage(userPhotoUrl!)
-                                  : null,
-                              child: (userPhotoUrl == null || userPhotoUrl!.isEmpty)
-                                  ? Text(
-                                      userName.isNotEmpty ? userName[0].toUpperCase() : 'E',
-                                      style: const TextStyle(
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : null,
-                            ),
-                            Positioned(
-                              right: 0,
-                              bottom: 0,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFFFAB8C),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.edit,
-                                  size: 14,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Bem-vindo(a) ao Oráculo',
-                              style: TextStyle(
-                                color: Color(0xFFFFAB8C),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              userName,
-                              style: const TextStyle(
-                                color: Color(0xFFFFAB8C),
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: _resetUser,
-                        icon: const Icon(
-                          Icons.logout_rounded,
-                          color: Color(0xFFFFAB8C),
-                          size: 24,
-                        ),
-                        tooltip: 'Sair',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-
-                  // MEUS MATERIAIS
-                  Container(
-                    height: 470,
-                    padding: const EdgeInsets.all(28),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFAB8C),
-                      borderRadius: BorderRadius.circular(55),
-                    ),
+                  GestureDetector(
+                    onTap: _updateProfilePhotoDialog,
                     child: Stack(
                       children: [
-                        const Positioned(
-                          top: 0,
-                          left: 0,
-                          child: Text(
-                            'Meus Materiais >',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                        CircleAvatar(
+                          radius: 36,
+                          backgroundColor: const Color(0xFFE4D1FF),
+                          backgroundImage: (userPhotoUrl != null && userPhotoUrl!.isNotEmpty)
+                              ? NetworkImage(userPhotoUrl!)
+                              : null,
+                          child: (userPhotoUrl == null || userPhotoUrl!.isEmpty)
+                              ? Text(
+                                  userName.isNotEmpty ? userName[0].toUpperCase() : 'E',
+                                  style: const TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : null,
                         ),
                         Positioned(
-                          left: 0,
                           right: 0,
                           bottom: 0,
                           child: Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.white, width: 3),
-                              borderRadius: BorderRadius.circular(30),
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFFFAB8C),
+                              shape: BoxShape.circle,
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Coleção Oráculo',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Container(
-                                  height: 46,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(30),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Expanded(
-                                        child: Text(
-                                          'Ex: Matemática, Linguagens...',
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            color: Color(0xFF333333),
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                      ),
-                                      Container(
-                                        width: 32,
-                                        height: 32,
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFFFFAB8C),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: const Icon(
-                                          Icons.search,
-                                          color: Colors.white,
-                                          size: 19,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                            child: const Icon(
+                              Icons.edit,
+                              size: 14,
+                              color: Colors.white,
                             ),
                           ),
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Bem-vindo(a) ao Oráculo',
+                          style: TextStyle(
+                            fontFamily: 'Georgia',
+                            color: Color(0xFFFFAB8C),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          userName,
+                          style: const TextStyle(
+                            color: Color(0xFFFFAB8C),
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: _resetUser,
+                    icon: const Icon(
+                      Icons.logout_rounded,
+                      color: Color(0xFFFFAB8C),
+                      size: 24,
+                    ),
+                    tooltip: 'Sair',
+                  ),
                 ],
               ),
-            ),
-          ),
+              const SizedBox(height: 32),
 
-          // ==========================================================
-          // BARRA INFERIOR
-          // ==========================================================
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Container(
-              height: 145,
-              color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(24, 10, 24, 35),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  _BottomButton(
-                    icon: Icons.edit_note,
-                    size: 70,
-                    onTap: openNotes,
-                  ),
-                  Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: const Color(0xFFE4D1FF),
-                        width: 4,
+              // MEUS MATERIAIS
+              Container(
+                height: 470,
+                padding: const EdgeInsets.all(28),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFAB8C),
+                  borderRadius: BorderRadius.circular(55),
+                ),
+                child: Stack(
+                  children: [
+                    const Positioned(
+                      top: 0,
+                      left: 0,
+                      child: Text(
+                        'Meus Materiais >',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                    child: const Icon(
-                      Icons.crop_square,
-                      color: Color(0xFFE4D1FF),
-                      size: 58,
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.white, width: 3),
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Coleção Oráculo',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Container(
+                              height: 46,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Expanded(
+                                    child: Text(
+                                      'Ex: Matemática, Linguagens...',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: Color(0xFFFFAB8C),
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFFFAB8C),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.search,
+                                      color: Colors.white,
+                                      size: 19,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                  _BottomButton(
-                    icon: Icons.calendar_month,
-                    size: 70,
-                    onTap: openCalendar,
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+            ],
           ),
+        ),
+      ),
 
+      // ==========================================================
+      // BARRA INFERIOR
+      // ==========================================================
+      Positioned(
+        left: 0,
+        right: 0,
+        bottom: 0,
+        child: Container(
+          height: 145,
+          color: Colors.white,
+          padding: const EdgeInsets.fromLTRB(24, 10, 24, 35),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _BottomButton(
+                icon: Icons.edit_note,
+                size: 70,
+                onTap: openNotes,
+              ),
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: const Color(0xFFE4D1FF),
+                    width: 4,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.crop_square,
+                  color: Color(0xFFE4D1FF),
+                  size: 58,
+                ),
+              ),
+              _BottomButton(
+                icon: Icons.calendar_month,
+                size: 70,
+                onTap: openCalendar,
+              ),
+            ],
+          ),
+        ),
+      ),
           // ==========================================================
           // SOBREPOSIÇÃO DE LOGIN / CADASTRO
           // ==========================================================
           if (showLogin)
             Positioned.fill(
               child: Container(
-                color: Colors.white,
+                decoration: const BoxDecoration(
+                 image: DecorationImage(
+                   image: AssetImage('assets/background.png'),
+                   fit: BoxFit.cover,
+                 )
+                ),
                 child: Center(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24),
