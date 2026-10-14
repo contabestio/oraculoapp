@@ -5,10 +5,8 @@ import 'pages/dashboard.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(const OraculoApp());
 }
@@ -25,9 +23,7 @@ class OraculoApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Arial',
         scaffoldBackgroundColor: Colors.white,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFFFA77F),
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFFA77F)),
       ),
       home: const DashboardPage(),
     );
