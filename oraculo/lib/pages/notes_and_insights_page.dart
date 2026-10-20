@@ -291,11 +291,37 @@ class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
                                     }
 
                                     if (snapshot.connectionState ==
-                                        ConnectionState.waiting) {
-                                      return const Center(
-                                        child: CircularProgressIndicator(
-                                          color: Colors.white,
+                                            ConnectionState.waiting &&
+                                        !snapshot.hasData) {
+                                      // Renderiza cartões vazios interativos imediatamente enquanto carrega
+                                      return GridView.builder(
+                                        physics: const BouncingScrollPhysics(),
+                                        itemCount: 6,
+                                        gridDelegate:
+                                            const SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: 2,
+                                          crossAxisSpacing: 16,
+                                          mainAxisSpacing: 16,
+                                          childAspectRatio: 0.85,
                                         ),
+                                        itemBuilder: (context, index) {
+                                          return BouncingPressable(
+                                            onTap: () => _openNote(),
+                                            scaleFactor: 0.94,
+                                            child: Material(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                              clipBehavior: Clip.antiAlias,
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(16),
+                                                child:
+                                                    _buildEmptyCardContent(),
+                                              ),
+                                            ),
+                                          );
+                                        },
                                       );
                                     }
 

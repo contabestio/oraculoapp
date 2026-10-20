@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -30,9 +31,11 @@ class _DashboardPageState extends State<DashboardPage> {
   String? userPhotoUrl;
 
   bool showLogin = false;
-  bool isLoading = true;
+  bool isLoading = false;
   bool isCreatingAccount = false;
   bool isProcessingAuth = false;
+
+  StreamSubscription<User?>? _authSubscription;
 
   // Busca de materiais
   final TextEditingController _searchController = TextEditingController();
@@ -75,10 +78,27 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     _loadSavedUser();
+    _authSubscription = _auth.authStateChanges().listen((user) {
+      if (!mounted) return;
+      setState(() {
+        if (user != null) {
+          userName = user.displayName?.trim().isNotEmpty == true
+              ? user.displayName!
+              : 'Estudante';
+          userPhotoUrl = user.photoURL;
+          showLogin = false;
+        } else {
+          userName = 'Estudante';
+          userPhotoUrl = null;
+          showLogin = true;
+        }
+      });
+    });
   }
 
   @override
   void dispose() {
+    _authSubscription?.cancel();
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -91,7 +111,7 @@ class _DashboardPageState extends State<DashboardPage> {
   // CARREGAR USUÁRIO DO FIREBASE
   // ==========================================================
 
-  Future<void> _loadSavedUser() async {
+  void _loadSavedUser() {
     try {
       final User? user = _auth.currentUser;
 
@@ -104,14 +124,12 @@ class _DashboardPageState extends State<DashboardPage> {
               : 'Estudante';
           userPhotoUrl = user.photoURL;
           showLogin = false;
-          isLoading = false;
         });
       } else {
         setState(() {
           userName = 'Estudante';
           userPhotoUrl = null;
           showLogin = true;
-          isLoading = false;
         });
       }
     } catch (e) {
@@ -120,7 +138,6 @@ class _DashboardPageState extends State<DashboardPage> {
         userName = 'Estudante';
         userPhotoUrl = null;
         showLogin = true;
-        isLoading = false;
       });
     }
   }

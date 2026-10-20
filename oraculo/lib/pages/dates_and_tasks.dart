@@ -1,23 +1,71 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../widgets/animations.dart';
 
-// Modelo de Dados para as Tarefas
+// ==========================================================
+// MODELO DE DADOS PARA TAREFAS / EVENTOS (FIRESTORE)
+// ==========================================================
+
 class TaskModel {
   final String id;
   final String title;
   final String time;
+  final String dateKey;
   final IconData icon;
   final Color iconColor;
   final Color iconBgColor;
+  final String category;
+  final DateTime createdAt;
 
   TaskModel({
-    String? id,
+    required this.id,
     required this.title,
     required this.time,
+    required this.dateKey,
     required this.icon,
     required this.iconColor,
     required this.iconBgColor,
-  }) : id = id ?? DateTime.now().microsecondsSinceEpoch.toString();
+    required this.category,
+    required this.createdAt,
+  });
+
+  factory TaskModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+    try {
+      final data = doc.data() ?? {};
+      final createTimestamp = data['createdAt'] as Timestamp?;
+      final int iconCode = (data['iconCodePoint'] as num?)?.toInt() ??
+          Icons.event_note_rounded.codePoint;
+      final int iconColorVal =
+          (data['iconColor'] as num?)?.toInt() ?? 0xFFFFAB8C;
+      final int iconBgColorVal =
+          (data['iconBgColor'] as num?)?.toInt() ?? 0xFFFFF0EA;
+
+      return TaskModel(
+        id: doc.id,
+        title: (data['title'] as String?)?.trim() ?? '',
+        time: (data['time'] as String?)?.trim() ?? '',
+        dateKey: (data['dateKey'] as String?)?.trim() ?? '',
+        icon: IconData(iconCode, fontFamily: 'MaterialIcons'),
+        iconColor: Color(iconColorVal),
+        iconBgColor: Color(iconBgColorVal),
+        category: (data['category'] as String?)?.trim() ?? 'Geral',
+        createdAt: createTimestamp?.toDate() ?? DateTime.now(),
+      );
+    } catch (_) {
+      return TaskModel(
+        id: doc.id,
+        title: 'Evento',
+        time: '',
+        dateKey: '',
+        icon: Icons.event_note_rounded,
+        iconColor: const Color(0xFFFFAB8C),
+        iconBgColor: const Color(0xFFFFF0EA),
+        category: 'Geral',
+        createdAt: DateTime.now(),
+      );
+    }
+  }
 }
 
 // Opções de ícones originais para o usuário selecionar
@@ -76,12 +124,15 @@ class DatesAndTasksPage extends StatefulWidget {
 }
 
 class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   // Controle de Data Dinâmico
   late DateTime _focusedMonth;
   late DateTime _selectedDate;
 
-  // Mapa com a Chave no Formato "YYYY-MM-DD"
-  final Map<String, List<TaskModel>> _tasksByDate = {};
+  // Lista local caso o usuário ainda não tenha feito login
+  final Map<String, List<TaskModel>> _localTasksByDate = {};
 
   @override
   void initState() {
@@ -89,25 +140,15 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
     final now = DateTime.now();
     _focusedMonth = DateTime(now.year, now.month);
     _selectedDate = DateTime(now.year, now.month, now.day);
+  }
 
-    // Tarefas iniciais de exemplo
-    final todayKey = _formatDateKey(_selectedDate);
-    _tasksByDate[todayKey] = [
-      TaskModel(
-        title: 'Redação: Inteligência Artificial',
-        time: '14:00',
-        icon: Icons.article_rounded,
-        iconColor: const Color(0xFFFFAB8C),
-        iconBgColor: const Color(0xFFFFF0EA),
-      ),
-      TaskModel(
-        title: 'Simulado de Matemática',
-        time: '09:30',
-        icon: Icons.functions_rounded,
-        iconColor: const Color(0xFF9EE08F),
-        iconBgColor: const Color(0xFFECFCE8),
-      ),
-    ];
+  /// Retorna a subcoleção de tarefas/eventos do usuário no Firestore:
+  /// users/{uid}/tasks
+  CollectionReference<Map<String, dynamic>>? _getUserTasksCollection() {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+
+    return _firestore.collection('users').doc(user.uid).collection('tasks');
   }
 
   String _formatDateKey(DateTime date) {
@@ -141,22 +182,88 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
     });
   }
 
-  // Deletar Tarefa
-  void _deleteTask(String dateKey, String taskId) {
-    setState(() {
-      _tasksByDate[dateKey]?.removeWhere((t) => t.id == taskId);
-      if (_tasksByDate[dateKey]?.isEmpty ?? false) {
-        _tasksByDate.remove(dateKey);
-      }
-    });
-
+  void _showMessage(String message, {bool isError = false}) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Evento removido com sucesso!'),
+      SnackBar(
+        content: Text(message),
+        backgroundColor:
+            isError ? const Color(0xFFFF6B6B) : const Color(0xFF594A6D),
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  // Criar Tarefa no Firestore ou Localmente
+  Future<void> _addTask({
+    required String title,
+    required String time,
+    required String dateKey,
+    required IconOption selectedOption,
+  }) async {
+    final collection = _getUserTasksCollection();
+
+    if (collection != null) {
+      try {
+        await collection.add({
+          'title': title,
+          'time': time,
+          'dateKey': dateKey,
+          'iconCodePoint': selectedOption.icon.codePoint,
+          'iconColor': selectedOption.color.toARGB32(),
+          'iconBgColor': selectedOption.bgColor.toARGB32(),
+          'category': selectedOption.label,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        _showMessage('Evento salvo no banco de dados!');
+        return;
+      } catch (e) {
+        debugPrint('Erro Firestore: $e');
+      }
+    }
+
+    // Se estiver sem conexão ou sem autenticação, salva localmente
+    setState(() {
+      final newTask = TaskModel(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        title: title,
+        time: time,
+        dateKey: dateKey,
+        icon: selectedOption.icon,
+        iconColor: selectedOption.color,
+        iconBgColor: selectedOption.bgColor,
+        category: selectedOption.label,
+        createdAt: DateTime.now(),
+      );
+
+      if (!_localTasksByDate.containsKey(dateKey)) {
+        _localTasksByDate[dateKey] = [];
+      }
+      _localTasksByDate[dateKey]!.add(newTask);
+    });
+    _showMessage('Evento criado!');
+  }
+
+  // Deletar Tarefa
+  Future<void> _deleteTask(String taskId, String dateKey) async {
+    final collection = _getUserTasksCollection();
+
+    if (collection != null) {
+      try {
+        await collection.doc(taskId).delete();
+        _showMessage('Evento removido com sucesso!');
+        return;
+      } catch (e) {
+        debugPrint('Erro Firestore delete: $e');
+      }
+    }
+
+    setState(() {
+      _localTasksByDate[dateKey]?.removeWhere((t) => t.id == taskId);
+    });
+    _showMessage('Evento removido com sucesso!');
   }
 
   // Modal para Criar Evento com Escolha de Ícone Original
@@ -334,7 +441,7 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
 
                     // Botão Salvar Evento
                     BouncingPressable(
-                      onTap: () {
+                      onTap: () async {
                         final title = titleController.text.trim();
                         final time = timeController.text.trim();
 
@@ -343,23 +450,14 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
                         final dateKey = _formatDateKey(_selectedDate);
                         final selectedIcon = availableIcons[selectedIconIndex];
 
-                        final newTask = TaskModel(
+                        Navigator.pop(bottomSheetContext);
+
+                        await _addTask(
                           title: title,
                           time: time.isNotEmpty ? time : 'Sem horário',
-                          icon: selectedIcon.icon,
-                          iconColor: selectedIcon.color,
-                          iconBgColor: selectedIcon.bgColor,
+                          dateKey: dateKey,
+                          selectedOption: selectedIcon,
                         );
-
-                        setState(() {
-                          if (_tasksByDate.containsKey(dateKey)) {
-                            _tasksByDate[dateKey]!.add(newTask);
-                          } else {
-                            _tasksByDate[dateKey] = [newTask];
-                          }
-                        });
-
-                        Navigator.pop(bottomSheetContext);
                       },
                       child: Container(
                         height: 48,
@@ -390,8 +488,8 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
 
   @override
   Widget build(BuildContext context) {
+    final collection = _getUserTasksCollection();
     final selectedKey = _formatDateKey(_selectedDate);
-    final currentTasks = _tasksByDate[selectedKey] ?? [];
 
     final daysInCurrentMonth = _daysInMonth(_focusedMonth);
     final startOffset = _firstWeekdayOfMonth(_focusedMonth);
@@ -442,7 +540,7 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
 
               const SizedBox(height: 20),
 
-              // CONTAINER PRINCIPAL LILÁS PASTEL ORIGINAL COM ANIMAÇÃO
+              // CONTAINER PRINCIPAL LILÁS PASTEL - NUNCA TRAVA EM TELA DE CARREGAMENTO
               Expanded(
                 child: FadeSlideTransition(
                   delay: const Duration(milliseconds: 150),
@@ -456,247 +554,291 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
                       color: const Color(0xFFE5D9FA),
                       borderRadius: BorderRadius.circular(36),
                     ),
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Mês e Setas Interativas Originais
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                      stream: collection?.snapshots(),
+                      builder: (context, snapshot) {
+                        final docs = snapshot.data?.docs ?? [];
+                        final List<TaskModel> firestoreTasks = docs
+                            .map((doc) => TaskModel.fromFirestore(doc))
+                            .toList();
+
+                        // Agrupa tarefas (do Firestore + locais) por data
+                        final Map<String, List<TaskModel>> tasksByDate = {};
+
+                        // Adiciona tarefas locais se houver
+                        _localTasksByDate.forEach((key, list) {
+                          tasksByDate[key] = List.from(list);
+                        });
+
+                        // Adiciona tarefas do Firestore
+                        for (final t in firestoreTasks) {
+                          if (!tasksByDate.containsKey(t.dateKey)) {
+                            tasksByDate[t.dateKey] = [];
+                          }
+                          tasksByDate[t.dateKey]!.add(t);
+                        }
+
+                        final currentTasks = tasksByDate[selectedKey] ?? [];
+
+                        return SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                '${_getMonthName(_focusedMonth.month)}, ${_focusedMonth.year}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                              // Mês e Setas Interativas Originais
                               Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  BouncingPressable(
-                                    onTap: () => _changeMonth(-1),
-                                    child: const Padding(
-                                      padding: EdgeInsets.all(4.0),
-                                      child: Icon(
-                                        Icons.chevron_left,
-                                        color: Colors.white,
-                                        size: 28,
-                                      ),
+                                  Text(
+                                    '${_getMonthName(_focusedMonth.month)}, ${_focusedMonth.year}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                  Row(
+                                    children: [
+                                      BouncingPressable(
+                                        onTap: () => _changeMonth(-1),
+                                        child: const Padding(
+                                          padding: EdgeInsets.all(4.0),
+                                          child: Icon(
+                                            Icons.chevron_left,
+                                            color: Colors.white,
+                                            size: 28,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      BouncingPressable(
+                                        onTap: () => _changeMonth(1),
+                                        child: const Padding(
+                                          padding: EdgeInsets.all(4.0),
+                                          child: Icon(
+                                            Icons.chevron_right,
+                                            color: Colors.white,
+                                            size: 28,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+
+                              const SizedBox(height: 20),
+
+                              // Siglas da Semana Originais
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
+                                children: const [
+                                  _WeekdayText('D'),
+                                  _WeekdayText('S'),
+                                  _WeekdayText('T'),
+                                  _WeekdayText('Q'),
+                                  _WeekdayText('Q'),
+                                  _WeekdayText('S'),
+                                  _WeekdayText('S'),
+                                ],
+                              ),
+
+                              const SizedBox(height: 12),
+
+                              // Grid dos Dias do Mês com Indicador
+                              GridView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: totalGridItems,
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 7,
+                                  mainAxisSpacing: 10,
+                                  crossAxisSpacing: 6,
+                                ),
+                                itemBuilder: (context, index) {
+                                  if (index < startOffset) {
+                                    return const SizedBox.shrink();
+                                  }
+
+                                  final dayNumber =
+                                      index - startOffset + 1;
+                                  final dateOfCell = DateTime(
+                                    _focusedMonth.year,
+                                    _focusedMonth.month,
+                                    dayNumber,
+                                  );
+
+                                  final isSelected =
+                                      dateOfCell.year == _selectedDate.year &&
+                                          dateOfCell.month ==
+                                              _selectedDate.month &&
+                                          dateOfCell.day ==
+                                              _selectedDate.day;
+
+                                  final cellKey =
+                                      _formatDateKey(dateOfCell);
+                                  final hasTasks = tasksByDate
+                                          .containsKey(cellKey) &&
+                                      tasksByDate[cellKey]!.isNotEmpty;
+
+                                  return CalendarDay(
+                                    day: dayNumber,
+                                    selected: isSelected,
+                                    hasTask: hasTasks,
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedDate = dateOfCell;
+                                      });
+                                    },
+                                  );
+                                },
+                              ),
+
+                              const SizedBox(height: 20),
+
+                              Container(
+                                height: 1,
+                                color: Colors.white.withValues(alpha: 0.4),
+                              ),
+
+                              const SizedBox(height: 20),
+
+                              // Cabeçalho de Entregas + Botão Adicionar Evento Original
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Entregas (${_selectedDate.day.toString().padLeft(2, '0')}/${_selectedDate.month.toString().padLeft(2, '0')})',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                   BouncingPressable(
-                                    onTap: () => _changeMonth(1),
-                                    child: const Padding(
-                                      padding: EdgeInsets.all(4.0),
-                                      child: Icon(
-                                        Icons.chevron_right,
+                                    onTap: () =>
+                                        _openAddTaskModal(context),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
                                         color: Colors.white,
-                                        size: 28,
+                                        borderRadius:
+                                            BorderRadius.circular(16),
+                                      ),
+                                      child: Row(
+                                        children: const [
+                                          Icon(
+                                            Icons.add_rounded,
+                                            color: Color(0xFFFFAB8C),
+                                            size: 18,
+                                          ),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            'Evento',
+                                            style: TextStyle(
+                                              color: Color(0xFFFFAB8C),
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
 
-                          const SizedBox(height: 20),
+                              const SizedBox(height: 16),
 
-                          // Siglas da Semana Originais
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: const [
-                              _WeekdayText('D'),
-                              _WeekdayText('S'),
-                              _WeekdayText('T'),
-                              _WeekdayText('Q'),
-                              _WeekdayText('Q'),
-                              _WeekdayText('S'),
-                              _WeekdayText('S'),
-                            ],
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          // Grid dos Dias do Mês com Animação
-                          GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: totalGridItems,
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 7,
-                              mainAxisSpacing: 10,
-                              crossAxisSpacing: 6,
-                            ),
-                            itemBuilder: (context, index) {
-                              if (index < startOffset) {
-                                return const SizedBox.shrink();
-                              }
-
-                              final dayNumber = index - startOffset + 1;
-                              final dateOfCell = DateTime(
-                                _focusedMonth.year,
-                                _focusedMonth.month,
-                                dayNumber,
-                              );
-
-                              final isSelected =
-                                  dateOfCell.year == _selectedDate.year &&
-                                      dateOfCell.month == _selectedDate.month &&
-                                      dateOfCell.day == _selectedDate.day;
-
-                              final cellKey = _formatDateKey(dateOfCell);
-                              final hasTasks = _tasksByDate.containsKey(cellKey) &&
-                                  _tasksByDate[cellKey]!.isNotEmpty;
-
-                              return CalendarDay(
-                                day: dayNumber,
-                                selected: isSelected,
-                                hasTask: hasTasks,
-                                onTap: () {
-                                  setState(() {
-                                    _selectedDate = dateOfCell;
-                                  });
-                                },
-                              );
-                            },
-                          ),
-
-                          const SizedBox(height: 20),
-
-                          Container(
-                            height: 1,
-                            color: Colors.white.withValues(alpha: 0.4),
-                          ),
-
-                          const SizedBox(height: 20),
-
-                          // Cabeçalho de Entregas + Botão Adicionar Evento Original
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Entregas (${_selectedDate.day.toString().padLeft(2, '0')}/${_selectedDate.month.toString().padLeft(2, '0')})',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              BouncingPressable(
-                                onTap: () => _openAddTaskModal(context),
-                                child: Container(
+                              // Lista de Tarefas (Zero dados padrão)
+                              if (currentTasks.isEmpty)
+                                Padding(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
+                                      vertical: 24),
+                                  child: Center(
+                                    child: Column(
+                                      children: [
+                                        const Text(
+                                          'Nenhum evento neste dia',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        BouncingPressable(
+                                          onTap: () =>
+                                              _openAddTaskModal(context),
+                                          child: const Text(
+                                            '+ Criar Evento Agora',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              decoration:
+                                                  TextDecoration.underline,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Row(
-                                    children: const [
-                                      Icon(
-                                        Icons.add_rounded,
-                                        color: Color(0xFFFFAB8C),
-                                        size: 18,
-                                      ),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'Evento',
-                                        style: TextStyle(
-                                          color: Color(0xFFFFAB8C),
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
+                                )
+                              else
+                                ListView.separated(
+                                  shrinkWrap: true,
+                                  physics:
+                                      const NeverScrollableScrollPhysics(),
+                                  itemCount: currentTasks.length,
+                                  separatorBuilder: (context, index) =>
+                                      const SizedBox(height: 12),
+                                  itemBuilder: (context, index) {
+                                    final task = currentTasks[index];
+
+                                    return Dismissible(
+                                      key: Key(task.id),
+                                      direction: DismissDirection.endToStart,
+                                      background: Container(
+                                        alignment: Alignment.centerRight,
+                                        padding:
+                                            const EdgeInsets.only(right: 20),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFF6B6B),
+                                          borderRadius:
+                                              BorderRadius.circular(28),
+                                        ),
+                                        child: const Icon(
+                                          Icons.delete_outline_rounded,
+                                          color: Colors.white,
+                                          size: 26,
                                         ),
                                       ),
-                                    ],
-                                  ),
+                                      onDismissed: (direction) {
+                                        _deleteTask(task.id, selectedKey);
+                                      },
+                                      child: _TaskCard(
+                                        icon: task.icon,
+                                        iconColor: task.iconColor,
+                                        iconBgColor: task.iconBgColor,
+                                        title: task.title,
+                                        time: task.time,
+                                        onDelete: () =>
+                                            _deleteTask(task.id, selectedKey),
+                                      ),
+                                    );
+                                  },
                                 ),
-                              ),
                             ],
                           ),
-
-                          const SizedBox(height: 16),
-
-                          // Lista com Suporte a Deslizar para Deletar
-                          if (currentTasks.isEmpty)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 24),
-                              child: Center(
-                                child: Column(
-                                  children: [
-                                    const Text(
-                                      'Nenhum evento neste dia',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    BouncingPressable(
-                                      onTap: () => _openAddTaskModal(context),
-                                      child: const Text(
-                                        '+ Criar Evento Agora',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          decoration: TextDecoration.underline,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            )
-                          else
-                            ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: currentTasks.length,
-                              separatorBuilder: (context, index) =>
-                                  const SizedBox(height: 12),
-                              itemBuilder: (context, index) {
-                                final task = currentTasks[index];
-
-                                return Dismissible(
-                                  key: Key(task.id),
-                                  direction: DismissDirection.endToStart,
-                                  background: Container(
-                                    alignment: Alignment.centerRight,
-                                    padding: const EdgeInsets.only(right: 20),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFF6B6B),
-                                      borderRadius: BorderRadius.circular(28),
-                                    ),
-                                    child: const Icon(
-                                      Icons.delete_outline_rounded,
-                                      color: Colors.white,
-                                      size: 26,
-                                    ),
-                                  ),
-                                  onDismissed: (direction) {
-                                    _deleteTask(selectedKey, task.id);
-                                  },
-                                  child: _TaskCard(
-                                    icon: task.icon,
-                                    iconColor: task.iconColor,
-                                    iconBgColor: task.iconBgColor,
-                                    title: task.title,
-                                    time: task.time,
-                                    onDelete: () =>
-                                        _deleteTask(selectedKey, task.id),
-                                  ),
-                                );
-                              },
-                            ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
                   ),
                 ),
