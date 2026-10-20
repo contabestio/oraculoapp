@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
+import 'animations.dart';
 
 class BookCoverCard extends StatefulWidget {
   final String title;
@@ -21,11 +23,12 @@ class _BookCoverCardState extends State<BookCoverCard> {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
+    return BouncingPressable(
+      onTap: widget.onTap,
+      scaleFactor: 0.96,
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -37,7 +40,7 @@ class _BookCoverCardState extends State<BookCoverCard> {
                     ? (Matrix4.identity()
                       ..setEntry(3, 2, 0.001)
                       ..rotateY(-0.35)
-                      ..translate(0.0, -10.0, 0.0))
+                      ..setTranslationRaw(0.0, -10.0, 0.0))
                     : Matrix4.identity(),
                 decoration: BoxDecoration(
                   borderRadius: const BorderRadius.only(
@@ -64,21 +67,21 @@ class _BookCoverCardState extends State<BookCoverCard> {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      // Book Cover Art
+                      // Imagem da capa ou fallback original
                       Image.network(
                         widget.imageUrl,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) => Container(
-                          color: const Color(0xFFE4D1FF),
+                          color: AppTheme.lilac,
                           child: const Icon(
                             Icons.menu_book_rounded,
                             size: 48,
-                            color: Color(0xFF333333),
+                            color: AppTheme.darkText,
                           ),
                         ),
                       ),
 
-                      // Book Spine Shadow & Crease Effect (Left side)
+                      // Sombra da lombada do livro (efeito original)
                       Positioned(
                         left: 0,
                         top: 0,
@@ -100,7 +103,7 @@ class _BookCoverCardState extends State<BookCoverCard> {
                         ),
                       ),
 
-                      // Book Page Simulation (Right edge border)
+                      // Borda das folhas do livro (efeito original)
                       Positioned(
                         right: 0,
                         top: 2,
@@ -119,7 +122,7 @@ class _BookCoverCardState extends State<BookCoverCard> {
                         ),
                       ),
 
-                      // Gloss / Sheen Layer
+                      // Brilho acetinado na capa
                       Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -147,7 +150,7 @@ class _BookCoverCardState extends State<BookCoverCard> {
                 fontFamily: 'Arial',
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF333333),
+                color: AppTheme.darkText,
               ),
             ),
           ],

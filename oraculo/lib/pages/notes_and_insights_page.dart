@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../widgets/animations.dart';
+
 // ==========================================================
-// CONSTANTES DE COR E TEMA
+// CONSTANTES DE COR E TEMA ORIGINAIS DO PROJETO
 // ==========================================================
 
 const Color _lilac = Color(0xFFEADBFF);
@@ -30,7 +32,6 @@ class NoteItem {
   });
 
   /// Constrói uma instância a partir de um documento do Cloud Firestore.
-  /// Trata possíveis valores nulos durante estimativas locais de latência (serverTimestamp).
   factory NoteItem.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? {};
     final updateTimestamp = data['updatedAt'] as Timestamp?;
@@ -60,7 +61,7 @@ class NoteEditorResult {
   const NoteEditorResult.save({
     required this.title,
     required this.content,
-  }) : action = NoteEditorAction.save;
+  })  : action = NoteEditorAction.save;
 
   const NoteEditorResult.delete()
       : action = NoteEditorAction.delete,
@@ -109,15 +110,35 @@ class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
   Future<void> _openNote({NoteItem? existingNote}) async {
     final collection = _getUserNotesCollection();
     if (collection == null) {
-      _showFeedback('Você precisa estar autenticado para gerenciar notas.', isError: true);
+      _showFeedback(
+        'Você precisa estar autenticado para gerenciar notas.',
+        isError: true,
+      );
       return;
     }
 
-    // Navega para o editor aguardando o resultado estruturado
+    // Navega para o editor com transição suave
     final NoteEditorResult? result = await Navigator.push<NoteEditorResult>(
       context,
-      MaterialPageRoute(
-        builder: (_) => NoteEditorPage(initialNote: existingNote),
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            NoteEditorPage(initialNote: existingNote),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curveAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          );
+          return FadeTransition(
+            opacity: curveAnimation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.05),
+                end: Offset.zero,
+              ).animate(curveAnimation),
+              child: child,
+            ),
+          );
+        },
       ),
     );
 
@@ -152,13 +173,18 @@ class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
     } on FirebaseException catch (e) {
       String errorMessage = 'Erro ao processar nota no Firebase.';
       if (e.code == 'permission-denied') {
-        errorMessage = 'Permissão negada. Verifique as regras de segurança do Firestore.';
+        errorMessage =
+            'Permissão negada. Verifique as regras de segurança do Firestore.';
       } else if (e.code == 'unavailable') {
-        errorMessage = 'Sem conexão com o Firebase. As alterações serão sincronizadas quando houver rede.';
+        errorMessage =
+            'Sem conexão com o Firebase. As alterações serão sincronizadas quando houver rede.';
       }
       _showFeedback(errorMessage, isError: true);
     } catch (_) {
-      _showFeedback('Ocorreu um erro inesperado ao salvar a nota.', isError: true);
+      _showFeedback(
+        'Ocorreu um erro inesperado ao salvar a nota.',
+        isError: true,
+      );
     }
   }
 
@@ -174,141 +200,157 @@ class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
           child: Column(
             children: [
               // ------------------------------------------------------
-              // BARRA SUPERIOR
+              // BARRA SUPERIOR ORIGINAL COM ANIMAÇÃO
               // ------------------------------------------------------
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, color: _orange, size: 28),
-                    tooltip: 'Voltar',
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Container(
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: _orange,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.outlined_flag,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            'Metas',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
+              FadeSlideTransition(
+                delay: const Duration(milliseconds: 50),
+                child: Row(
+                  children: [
+                    BouncingPressable(
+                      onTap: () => Navigator.pop(context),
+                      child: const Padding(
+                        padding: EdgeInsets.all(4.0),
+                        child: Icon(
+                          Icons.close,
+                          color: _orange,
+                          size: 28,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Container(
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: _orange,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.outlined_flag,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'Metas',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
 
               const SizedBox(height: 32),
 
               // ------------------------------------------------------
-              // PAINEL PRINCIPAL LILÁS
+              // PAINEL PRINCIPAL LILÁS ORIGINAL COM ANIMAÇÃO
               // ------------------------------------------------------
               Expanded(
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: _lilac,
-                    borderRadius: BorderRadius.circular(36),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Notas e Insights >',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+                child: FadeSlideTransition(
+                  delay: const Duration(milliseconds: 150),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: _lilac,
+                      borderRadius: BorderRadius.circular(36),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Notas e Insights >',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 20),
+                        Expanded(
+                          child: collection == null
+                              ? _buildUnauthenticatedState()
+                              : StreamBuilder<
+                                  QuerySnapshot<Map<String, dynamic>>>(
+                                  stream: collection
+                                      .orderBy('updatedAt', descending: true)
+                                      .snapshots(),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.hasError) {
+                                      return _buildErrorState(snapshot.error);
+                                    }
 
-                      const SizedBox(height: 20),
-
-                      Expanded(
-                        child: collection == null
-                            ? _buildUnauthenticatedState()
-                            : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                                stream: collection
-                                    .orderBy('updatedAt', descending: true)
-                                    .snapshots(),
-                                builder: (context, snapshot) {
-                                  if (snapshot.hasError) {
-                                    return _buildErrorState(snapshot.error);
-                                  }
-
-                                  if (snapshot.connectionState ==
-                                      ConnectionState.waiting) {
-                                    return const Center(
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                      ),
-                                    );
-                                  }
-
-                                  final docs = snapshot.data?.docs ?? [];
-                                  final List<NoteItem> notes = docs
-                                      .map((doc) => NoteItem.fromFirestore(doc))
-                                      .toList();
-
-                                  final int totalCards =
-                                      notes.length < 6 ? 6 : notes.length;
-
-                                  return GridView.builder(
-                                    physics: const BouncingScrollPhysics(),
-                                    itemCount: totalCards,
-                                    gridDelegate:
-                                        const SliverGridDelegateWithFixedCrossAxisCount(
-                                          crossAxisCount: 2,
-                                          crossAxisSpacing: 16,
-                                          mainAxisSpacing: 16,
-                                          childAspectRatio: 0.85,
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return const Center(
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
                                         ),
-                                    itemBuilder: (context, index) {
-                                      final bool hasNote = index < notes.length;
+                                      );
+                                    }
 
-                                      return Material(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(20),
-                                        clipBehavior: Clip.antiAlias,
-                                        child: InkWell(
+                                    final docs = snapshot.data?.docs ?? [];
+                                    final List<NoteItem> notes = docs
+                                        .map((doc) => NoteItem.fromFirestore(doc))
+                                        .toList();
+
+                                    final int totalCards =
+                                        notes.length < 6 ? 6 : notes.length;
+
+                                    return GridView.builder(
+                                      physics: const BouncingScrollPhysics(),
+                                      itemCount: totalCards,
+                                      gridDelegate:
+                                          const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 2,
+                                        crossAxisSpacing: 16,
+                                        mainAxisSpacing: 16,
+                                        childAspectRatio: 0.85,
+                                      ),
+                                      itemBuilder: (context, index) {
+                                        final bool hasNote =
+                                            index < notes.length;
+
+                                        return BouncingPressable(
                                           onTap: () => _openNote(
                                             existingNote:
                                                 hasNote ? notes[index] : null,
                                           ),
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(16),
-                                            child: hasNote
-                                                ? _buildNoteCardContent(
-                                                    notes[index],
-                                                  )
-                                                : _buildEmptyCardContent(),
+                                          scaleFactor: 0.94,
+                                          child: Material(
+                                            color: Colors.white,
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                            elevation: hasNote ? 2 : 0,
+                                            shadowColor: Colors.black.withValues(alpha: 0.1),
+                                            clipBehavior: Clip.antiAlias,
+                                            child: Padding(
+                                              padding: const EdgeInsets.all(16),
+                                              child: hasNote
+                                                  ? _buildNoteCardContent(
+                                                      notes[index],
+                                                    )
+                                                  : _buildEmptyCardContent(),
+                                            ),
                                           ),
-                                        ),
-                                      );
-                                    },
-                                  );
-                                },
-                              ),
-                      ),
-                    ],
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -317,13 +359,17 @@ class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
         ),
       ),
 
-      // Botão flutuante para adicionar nova nota
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openNote(),
-        backgroundColor: _orange,
-        foregroundColor: Colors.white,
-        tooltip: 'Criar nota',
-        child: const Icon(Icons.add, size: 30),
+      // Botão flutuante original com compressão animada
+      floatingActionButton: BouncingPressable(
+        onTap: () => _openNote(),
+        child: FloatingActionButton(
+          onPressed: () => _openNote(),
+          backgroundColor: _orange,
+          foregroundColor: Colors.white,
+          tooltip: 'Criar nota',
+          elevation: 4,
+          child: const Icon(Icons.add, size: 30),
+        ),
       ),
     );
   }
@@ -353,7 +399,8 @@ class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 13,
-              color: note.content.trim().isEmpty ? Colors.grey : Colors.black87,
+              color:
+                  note.content.trim().isEmpty ? Colors.grey : Colors.black87,
             ),
           ),
         ),
@@ -426,9 +473,11 @@ class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
     String message = 'Ocorreu um erro ao carregar as notas.';
     if (error is FirebaseException) {
       if (error.code == 'permission-denied') {
-        message = 'Acesso negado: verifique as regras de segurança do Firestore no Firebase Console.';
+        message =
+            'Acesso negado: verifique as regras de segurança do Firestore no Firebase Console.';
       } else if (error.code == 'unavailable') {
-        message = 'Serviço temporariamente indisponível. Verifique sua conexão com a internet.';
+        message =
+            'Serviço temporariamente indisponível. Verifique sua conexão com a internet.';
       }
     }
 
@@ -578,10 +627,12 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back, color: _orange),
-          tooltip: 'Voltar',
+        leading: BouncingPressable(
+          onTap: () => Navigator.pop(context),
+          child: const Padding(
+            padding: EdgeInsets.all(4.0),
+            child: Icon(Icons.arrow_back, color: _orange),
+          ),
         ),
         title: Text(
           isEditing ? 'Editar nota' : 'Nova nota',
@@ -591,10 +642,12 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
           ),
         ),
         actions: [
-          IconButton(
-            tooltip: 'Salvar nota',
-            onPressed: _saveNote,
-            icon: const Icon(Icons.check, color: _orange, size: 28),
+          BouncingPressable(
+            onTap: _saveNote,
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              child: Icon(Icons.check, color: _orange, size: 28),
+            ),
           ),
         ],
       ),
@@ -652,15 +705,25 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                 const SizedBox(height: 16),
                 Align(
                   alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    onPressed: _confirmDelete,
-                    icon: const Icon(
-                      Icons.delete_outline,
-                      color: Colors.redAccent,
-                    ),
-                    label: const Text(
-                      'Excluir nota',
-                      style: TextStyle(color: Colors.redAccent),
+                  child: BouncingPressable(
+                    onTap: _confirmDelete,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(
+                            Icons.delete_outline,
+                            color: Colors.redAccent,
+                            size: 20,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Excluir nota',
+                            style: TextStyle(color: Colors.redAccent),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
