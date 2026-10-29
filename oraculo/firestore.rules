@@ -4,18 +4,28 @@ service cloud.firestore {
   match /databases/{database}/documents {
     
     // ===============================================================
-    // Regras de Segurança para a coleção de Usuários e Subcoleções
+    // Regras de Segurança para Usuários e suas Subcoleções (Notas, Eventos/Tarefas)
     // ===============================================================
     
-    // Regras para as notas de cada usuário: users/{userId}/notes/{noteId}
+    // Notas do usuário: users/{userId}/notes/{noteId}
     match /users/{userId}/notes/{noteId} {
-      // O usuário só pode ler, criar, atualizar ou excluir suas próprias notas
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Eventos e tarefas do calendário: users/{userId}/tasks/{taskId}
+    match /users/{userId}/tasks/{taskId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Se houver dados gerais no documento do próprio usuário (ex: perfil)
-    match /users/{userId} {
+    // Dados de perfil e quaisquer outras subcoleções do próprio usuário
+    match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Materiais e Livros públicos sincronizados pela equipe/admin
+    match /public_materials/{materialId} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
     
     // Bloqueia qualquer outro acesso não autorizado por padrão

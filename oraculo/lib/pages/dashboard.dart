@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../theme/app_theme.dart';
 import '../widgets/animations.dart';
@@ -8,6 +10,12 @@ import '../widgets/book_cover_card.dart';
 import 'dates_and_tasks.dart';
 import 'notes_and_insights_page.dart';
 import 'materials_page.dart';
+import '../data/books_repository.dart';
+import '../models/book_model.dart';
+import '../services/admin_service.dart';
+import '../widgets/admin_management_dialog.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'book_details_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -41,26 +49,6 @@ class _DashboardPageState extends State<DashboardPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
-  // Lista de materiais de estudo com as capas do projeto
-  final List<Map<String, String>> _allMaterials = [
-    {
-      'title': 'Redação',
-      'image': 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=400&q=80',
-    },
-    {
-      'title': 'Matemática',
-      'image': 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400&q=80',
-    },
-    {
-      'title': 'Linguagens',
-      'image': 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80',
-    },
-    {
-      'title': 'Ciências',
-      'image': 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=400&q=80',
-    },
-  ];
-
   // ==========================================================
   // CONTROLLERS
   // ==========================================================
@@ -80,6 +68,7 @@ class _DashboardPageState extends State<DashboardPage> {
     _loadSavedUser();
     _authSubscription = _auth.authStateChanges().listen((user) {
       if (!mounted) return;
+      AdminService.instance.checkAdminStatus(user);
       setState(() {
         if (user != null) {
           userName = user.displayName?.trim().isNotEmpty == true
@@ -111,33 +100,39 @@ class _DashboardPageState extends State<DashboardPage> {
   // CARREGAR USUÁRIO DO FIREBASE
   // ==========================================================
 
-  void _loadSavedUser() {
+  void _loadSavedUser() async {
     try {
       final User? user = _auth.currentUser;
 
       if (!mounted) return;
 
       if (user != null) {
+        AdminService.instance.checkAdminStatus(user);
         setState(() {
           userName = user.displayName?.trim().isNotEmpty == true
               ? user.displayName!
-              : 'Estudante';
+              : (user.email?.split('@').first ?? 'Estudante');
           userPhotoUrl = user.photoURL;
           showLogin = false;
         });
-      } else {
-        setState(() {
-          userName = 'Estudante';
-          userPhotoUrl = null;
-          showLogin = true;
-        });
+        return;
       }
+
+      final prefs = await SharedPreferences.getInstance();
+      final bool isGuest = prefs.getBool('oraculo_guest_mode') ?? false;
+
+      AdminService.instance.isAdminNotifier.value = false;
+      setState(() {
+        userName = 'Estudante';
+        userPhotoUrl = null;
+        showLogin = !isGuest;
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         userName = 'Estudante';
         userPhotoUrl = null;
-        showLogin = true;
+        showLogin = false;
       });
     }
   }
@@ -191,6 +186,7 @@ class _DashboardPageState extends State<DashboardPage> {
       if (!mounted) return;
 
       final updatedUser = _auth.currentUser;
+      AdminService.instance.checkAdminStatus(updatedUser);
 
       setState(() {
         userName = name;
@@ -247,6 +243,7 @@ class _DashboardPageState extends State<DashboardPage> {
       if (!mounted) return;
 
       final user = credential.user;
+      AdminService.instance.checkAdminStatus(user);
 
       setState(() {
         userName = user?.displayName?.trim().isNotEmpty == true
@@ -271,6 +268,118 @@ class _DashboardPageState extends State<DashboardPage> {
         isProcessingAuth = false;
       });
       _showMessage('Não foi possível entrar. Tente novamente.');
+    }
+  }
+
+  // ==========================================================
+  // LOGIN COM GOOGLE (MULTI-PLATAFORMA: WEB, WINDOWS, MOBILE)
+  // ==========================================================
+
+  Future<void> _loginWithGoogle() async {
+    setState(() {
+      isProcessingAuth = true;
+    });
+
+    try {
+      UserCredential userCredential;
+
+      if (kIsWeb) {
+        // Navegador Web: usa signInWithPopup oficial do Firebase
+        final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+        googleProvider.addScope('email');
+        googleProvider.addScope('profile');
+        userCredential = await _auth
+            .signInWithPopup(googleProvider)
+            .timeout(const Duration(seconds: 30));
+      } else if (!kIsWeb &&
+          (defaultTargetPlatform == TargetPlatform.windows ||
+              defaultTargetPlatform == TargetPlatform.macOS ||
+              defaultTargetPlatform == TargetPlatform.linux)) {
+        // Desktop (Windows/macOS/Linux): tenta abrir navegador para autenticar com timeout
+        final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+        googleProvider.addScope('email');
+        googleProvider.addScope('profile');
+        userCredential = await _auth
+            .signInWithProvider(googleProvider)
+            .timeout(const Duration(seconds: 15));
+      } else {
+        // Mobile (Android / iOS): usa o plugin nativo google_sign_in
+        final GoogleSignIn googleSignIn = GoogleSignIn();
+        final GoogleSignInAccount? googleUser = await googleSignIn
+            .signIn()
+            .timeout(const Duration(seconds: 25));
+
+        if (googleUser == null) {
+          // Usuário fechou a janela de seleção de conta do Google
+          if (!mounted) return;
+          setState(() {
+            isProcessingAuth = false;
+          });
+          return;
+        }
+
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
+        final OAuthCredential credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+
+        userCredential = await _auth
+            .signInWithCredential(credential)
+            .timeout(const Duration(seconds: 20));
+      }
+
+      if (!mounted) return;
+
+      final user = userCredential.user;
+      AdminService.instance.checkAdminStatus(user);
+
+      setState(() {
+        userName = user?.displayName?.trim().isNotEmpty == true
+            ? user!.displayName!
+            : (user?.email?.split('@').first ?? 'Estudante');
+        userPhotoUrl = user?.photoURL;
+        showLogin = false;
+        isProcessingAuth = false;
+      });
+
+      _clearAuthFields();
+      _showMessage('Bem-vindo(a), $userName!');
+    } on TimeoutException {
+      if (!mounted) return;
+      _showMessage(
+        'Tempo limite de autenticação excedido. No Desktop, entre com seu E-mail e Senha.',
+        isError: true,
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      _showFirebaseError(e);
+    } catch (e) {
+      debugPrint('Google Sign-In Error: $e');
+      if (!mounted) return;
+
+      final errorString = e.toString();
+      if (errorString.contains('10') ||
+          errorString.contains('developer_error') ||
+          errorString.contains('ApiException')) {
+        _showMessage(
+          'Configuração do Google no Firebase incompleta (adicione a chave SHA-1 do app no Console do Firebase).',
+        );
+      } else if (errorString.contains('unimplemented') ||
+          errorString.contains('MissingPluginException')) {
+        _showMessage(
+          'Login com Google indisponível nesta plataforma desktop. Entre com seu e-mail e senha abaixo.',
+        );
+      } else {
+        _showMessage('Não foi possível entrar com o Google: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          isProcessingAuth = false;
+        });
+      }
     }
   }
 
@@ -342,7 +451,15 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> _resetUser() async {
     try {
+      if (!kIsWeb &&
+          (defaultTargetPlatform == TargetPlatform.android ||
+              defaultTargetPlatform == TargetPlatform.iOS)) {
+        try {
+          await GoogleSignIn().signOut();
+        } catch (_) {}
+      }
       await _auth.signOut();
+      AdminService.instance.isAdminNotifier.value = false;
 
       if (!mounted) return;
 
@@ -373,6 +490,18 @@ class _DashboardPageState extends State<DashboardPage> {
     String message;
 
     switch (e.code) {
+      case 'operation-not-allowed':
+        message =
+            'O login com Google não está ativado no Firebase. Acesse o Console do Firebase > Authentication > Sign-in method e ative o provedor Google.';
+        break;
+      case 'popup-closed-by-user':
+      case 'canceled':
+        message = 'Login com o Google cancelado.';
+        break;
+      case 'account-exists-with-different-credential':
+        message =
+            'Já existe uma conta com este e-mail usando outro método de login.';
+        break;
       case 'email-already-in-use':
         message = 'Este e-mail já está cadastrado.';
         break;
@@ -402,13 +531,15 @@ class _DashboardPageState extends State<DashboardPage> {
     _showMessage(message);
   }
 
-  void _showMessage(String message) {
+  void _showMessage(String message, {bool isError = false}) {
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
+        backgroundColor:
+            isError ? const Color(0xFFFF6B6B) : const Color(0xFF594A6D),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
@@ -512,66 +643,72 @@ class _DashboardPageState extends State<DashboardPage> {
       );
     }
 
-    final filteredMaterials = _allMaterials.where((m) {
-      return _searchQuery.isEmpty ||
-          (m['title']?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
-    }).toList();
+    return ValueListenableBuilder<List<BookModel>>(
+      valueListenable: BooksRepository.instance.booksNotifier,
+      builder: (context, allBooks, _) {
+        final filteredMaterials = allBooks.where((m) {
+          return _searchQuery.isEmpty ||
+              m.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+              m.category.toLowerCase().contains(_searchQuery.toLowerCase());
+        }).toList();
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          // ======================================================
-          // CONTEÚDO PRINCIPAL COM ANIMAÇÃO DE ENTRADA
-          // ======================================================
-          SafeArea(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(24, 40, 24, 160),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // CABEÇALHO DO PERFIL COM CORES ORIGINAIS E ANIMAÇÃO
-                  FadeSlideTransition(
-                    delay: const Duration(milliseconds: 100),
-                    child: _buildHeader(),
+        return Scaffold(
+          backgroundColor: Colors.white,
+          body: Stack(
+            children: [
+              // ======================================================
+              // CONTEÚDO PRINCIPAL COM ANIMAÇÃO DE ENTRADA
+              // ======================================================
+              SafeArea(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(24, 40, 24, 160),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // CABEÇALHO DO PERFIL COM CORES ORIGINAIS E ANIMAÇÃO
+                      FadeSlideTransition(
+                        delay: const Duration(milliseconds: 100),
+                        child: _buildHeader(),
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      // CONTAINER PRINCIPAL: MEUS MATERIAIS
+                      FadeSlideTransition(
+                        delay: const Duration(milliseconds: 200),
+                        child: _buildMaterialsContainer(filteredMaterials),
+                      ),
+                    ],
                   ),
-
-                  const SizedBox(height: 32),
-
-                  // CONTAINER PRINCIPAL: MEUS MATERIAIS
-                  FadeSlideTransition(
-                    delay: const Duration(milliseconds: 200),
-                    child: _buildMaterialsContainer(filteredMaterials),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
 
-          // ======================================================
-          // BARRA INFERIOR ORIGINAL COM ANIMAÇÃO DE TOQUE
-          // ======================================================
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: FadeSlideTransition(
-              delay: const Duration(milliseconds: 300),
-              direction: SlideDirection.up,
-              child: _buildBottomNav(),
-            ),
-          ),
+              // ======================================================
+              // BARRA INFERIOR ORIGINAL COM ANIMAÇÃO DE TOQUE
+              // ======================================================
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: FadeSlideTransition(
+                  delay: const Duration(milliseconds: 300),
+                  direction: SlideDirection.up,
+                  child: _buildBottomNav(),
+                ),
+              ),
 
-          // ======================================================
-          // SOBREPOSIÇÃO DE LOGIN / CADASTRO ORIGINAL
-          // ======================================================
-          if (showLogin)
-            Positioned.fill(
-              child: _buildAuthOverlay(),
-            ),
-        ],
-      ),
+              // ======================================================
+              // SOBREPOSIÇÃO DE LOGIN / CADASTRO ORIGINAL
+              // ======================================================
+              if (showLogin)
+                Positioned.fill(
+                  child: _buildAuthOverlay(),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -651,12 +788,57 @@ class _DashboardPageState extends State<DashboardPage> {
             ],
           ),
         ),
+        ValueListenableBuilder<bool>(
+          valueListenable: AdminService.instance.isAdminNotifier,
+          builder: (context, isAdmin, _) {
+            if (!isAdmin) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: BouncingPressable(
+                onTap: () => AdminManagementDialog.show(context),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E293B),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.shield_outlined, color: Color(0xFF38BDF8), size: 16),
+                      SizedBox(width: 4),
+                      Text(
+                        'ADMIN',
+                        style: TextStyle(
+                          color: Color(0xFF38BDF8),
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
         BouncingPressable(
-          onTap: _resetUser,
+          onTap: _auth.currentUser == null
+              ? () => setState(() => showLogin = true)
+              : _resetUser,
           child: Container(
             padding: const EdgeInsets.all(8),
-            child: const Icon(
-              Icons.logout_rounded,
+            child: Icon(
+              _auth.currentUser == null
+                  ? Icons.login_rounded
+                  : Icons.logout_rounded,
               color: AppTheme.orange,
               size: 24,
             ),
@@ -670,7 +852,7 @@ class _DashboardPageState extends State<DashboardPage> {
   // SEÇÃO MEUS MATERIAIS COM ANIMAÇÃO E CORES ORIGINAIS
   // ==========================================================
 
-  Widget _buildMaterialsContainer(List<Map<String, String>> filteredMaterials) {
+  Widget _buildMaterialsContainer(List<BookModel> filteredMaterials) {
     return Container(
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
@@ -725,10 +907,15 @@ class _DashboardPageState extends State<DashboardPage> {
                     return SizedBox(
                       width: 125,
                       child: BookCoverCard(
-                        title: item['title'] ?? '',
-                        imageUrl: item['image'] ?? '',
+                        title: item.title,
+                        imageUrl: item.imageUrl,
                         onTap: () {
-                          openMaterials(item['title'] ?? '');
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => BookDetailsPage(initialBook: item),
+                            ),
+                          );
                         },
                       ),
                     );
@@ -1142,6 +1329,134 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                     ),
                   ],
+
+                  // ====================================================
+                  // DIVISOR & ENTRAR COM O GOOGLE
+                  // ====================================================
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Divider(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          thickness: 1,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          'ou',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Divider(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          thickness: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // BOTÃO GOOGLE SIGN-IN
+                  BouncingPressable(
+                    onTap: isProcessingAuth ? null : _loginWithGoogle,
+                    child: Container(
+                      height: 48,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.12),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (isProcessingAuth) ...[
+                            const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppTheme.orange,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            const Text(
+                              'Conectando com o Google...',
+                              style: TextStyle(
+                                fontFamily: 'Arial',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: Color(0xFF666666),
+                              ),
+                            ),
+                          ] else ...[
+                            Container(
+                              width: 26,
+                              height: 26,
+                              alignment: Alignment.center,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFFF1F5F9),
+                              ),
+                              child: const Text(
+                                'G',
+                                style: TextStyle(
+                                  fontFamily: 'Arial',
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 16,
+                                  color: Color(0xFF4285F4),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            const Text(
+                              'Entrar com o Google',
+                              style: TextStyle(
+                                fontFamily: 'Arial',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: Color(0xFF333333),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: isProcessingAuth
+                        ? null
+                        : () async {
+                            final prefs = await SharedPreferences.getInstance();
+                            await prefs.setBool('oraculo_guest_mode', true);
+                            if (!mounted) return;
+                            setState(() {
+                              showLogin = false;
+                            });
+                          },
+                    child: Text(
+                      'Continuar como Convidado (modo offline)',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        fontSize: 13,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

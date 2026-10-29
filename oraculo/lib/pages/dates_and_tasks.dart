@@ -1,10 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/animations.dart';
 
 // ==========================================================
-// MODELO DE DADOS PARA TAREFAS / EVENTOS (FIRESTORE)
+// MODELO DE DADOS PARA TAREFAS / EVENTOS (FIRESTORE & LOCAL)
 // ==========================================================
 
 class TaskModel {
@@ -30,26 +32,92 @@ class TaskModel {
     required this.createdAt,
   });
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'time': time,
+      'dateKey': dateKey,
+      'iconCodePoint': icon.codePoint,
+      'iconColor': iconColor.toARGB32(),
+      'iconBgColor': iconBgColor.toARGB32(),
+      'category': category,
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
+
+  static IconData resolveIcon(String category, int? codePoint) {
+    if (codePoint != null) {
+      if (codePoint == Icons.article_rounded.codePoint) {
+        return Icons.article_rounded;
+      }
+      if (codePoint == Icons.menu_book_rounded.codePoint) {
+        return Icons.menu_book_rounded;
+      }
+      if (codePoint == Icons.functions_rounded.codePoint) {
+        return Icons.functions_rounded;
+      }
+      if (codePoint == Icons.groups_rounded.codePoint) {
+        return Icons.groups_rounded;
+      }
+      if (codePoint == Icons.event_note_rounded.codePoint) {
+        return Icons.event_note_rounded;
+      }
+    }
+    switch (category.trim().toLowerCase()) {
+      case 'redação':
+      case 'redacao':
+        return Icons.article_rounded;
+      case 'leitura':
+        return Icons.menu_book_rounded;
+      case 'exatas':
+        return Icons.functions_rounded;
+      case 'reunião':
+      case 'reuniao':
+        return Icons.groups_rounded;
+      default:
+        return Icons.event_note_rounded;
+    }
+  }
+
+  factory TaskModel.fromJson(Map<String, dynamic> json) {
+    final int? iconCode = (json['iconCodePoint'] as num?)?.toInt();
+    final String category = json['category'] as String? ?? 'Geral';
+    return TaskModel(
+      id: json['id'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      time: json['time'] as String? ?? '',
+      dateKey: json['dateKey'] as String? ?? '',
+      icon: resolveIcon(category, iconCode),
+      iconColor: Color((json['iconColor'] as num?)?.toInt() ?? 0xFFFFAB8C),
+      iconBgColor: Color((json['iconBgColor'] as num?)?.toInt() ?? 0xFFFFF0EA),
+      category: category,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'] as String) ?? DateTime.now()
+          : DateTime.now(),
+    );
+  }
+
   factory TaskModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     try {
       final data = doc.data() ?? {};
       final createTimestamp = data['createdAt'] as Timestamp?;
-      final int iconCode = (data['iconCodePoint'] as num?)?.toInt() ??
-          Icons.event_note_rounded.codePoint;
+      final int? iconCode = (data['iconCodePoint'] as num?)?.toInt();
       final int iconColorVal =
           (data['iconColor'] as num?)?.toInt() ?? 0xFFFFAB8C;
       final int iconBgColorVal =
           (data['iconBgColor'] as num?)?.toInt() ?? 0xFFFFF0EA;
+      final String category = (data['category'] as String?)?.trim() ?? 'Geral';
 
       return TaskModel(
         id: doc.id,
         title: (data['title'] as String?)?.trim() ?? '',
         time: (data['time'] as String?)?.trim() ?? '',
         dateKey: (data['dateKey'] as String?)?.trim() ?? '',
-        icon: IconData(iconCode, fontFamily: 'MaterialIcons'),
+        icon: resolveIcon(category, iconCode),
         iconColor: Color(iconColorVal),
         iconBgColor: Color(iconBgColorVal),
-        category: (data['category'] as String?)?.trim() ?? 'Geral',
+        category: category,
         createdAt: createTimestamp?.toDate() ?? DateTime.now(),
       );
     } catch (_) {
@@ -131,7 +199,7 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
   late DateTime _focusedMonth;
   late DateTime _selectedDate;
 
-  // Lista local caso o usuário ainda não tenha feito login
+  // Lista local persistida via SharedPreferences
   final Map<String, List<TaskModel>> _localTasksByDate = {};
 
   @override
@@ -140,6 +208,89 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
     final now = DateTime.now();
     _focusedMonth = DateTime(now.year, now.month);
     _selectedDate = DateTime(now.year, now.month, now.day);
+    _loadLocalTasks().then((_) {
+      _syncLocalTasksToFirestore();
+    });
+  }
+
+  // ==========================================================
+  // PERSISTÊNCIA LOCAL (SHARED PREFERENCES)
+  // ==========================================================
+
+  Future<void> _loadLocalTasks() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString('oraculo_local_tasks_data');
+      if (raw != null && raw.isNotEmpty) {
+        final Map<String, dynamic> decoded = jsonDecode(raw);
+        if (!mounted) return;
+        setState(() {
+          _localTasksByDate.clear();
+          decoded.forEach((key, listRaw) {
+            if (listRaw is List) {
+              _localTasksByDate[key] = listRaw
+                  .map((item) =>
+                      TaskModel.fromJson(Map<String, dynamic>.from(item)))
+                  .toList();
+            }
+          });
+        });
+        return;
+      }
+    } catch (e) {
+      debugPrint('Erro ao carregar tarefas locais: $e');
+    }
+  }
+
+  Future<void> _saveLocalTasks() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final Map<String, dynamic> toEncode = {};
+      _localTasksByDate.forEach((key, list) {
+        toEncode[key] = list.map((t) => t.toJson()).toList();
+      });
+      await prefs.setString('oraculo_local_tasks_data', jsonEncode(toEncode));
+    } catch (e) {
+      debugPrint('Erro ao salvar tarefas locais: $e');
+    }
+  }
+
+  /// Quando o usuário estiver autenticado, faz o upload automático de quaisquer eventos locais criados offline
+  Future<void> _syncLocalTasksToFirestore() async {
+    final collection = _getUserTasksCollection();
+    if (collection == null || _localTasksByDate.isEmpty) return;
+
+    try {
+      bool anySynced = false;
+      final localKeys = List<String>.from(_localTasksByDate.keys);
+      for (final key in localKeys) {
+        final tasks = _localTasksByDate[key] ?? [];
+        for (final task in tasks) {
+          await collection.add({
+            'title': task.title,
+            'time': task.time,
+            'dateKey': task.dateKey,
+            'iconCodePoint': task.icon.codePoint,
+            'iconColor': task.iconColor.toARGB32(),
+            'iconBgColor': task.iconBgColor.toARGB32(),
+            'category': task.category,
+            'createdAt': Timestamp.fromDate(task.createdAt),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+          anySynced = true;
+        }
+      }
+
+      if (anySynced && mounted) {
+        setState(() {
+          _localTasksByDate.clear();
+        });
+        await _saveLocalTasks();
+        _showMessage('Eventos sincronizados com sua conta na nuvem!');
+      }
+    } catch (e) {
+      debugPrint('Erro ao sincronizar eventos locais com o Firestore: $e');
+    }
   }
 
   /// Retorna a subcoleção de tarefas/eventos do usuário no Firestore:
@@ -217,52 +368,88 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         });
-        _showMessage('Evento salvo no banco de dados!');
+        _showMessage('Evento salvo com sucesso na nuvem!');
         return;
+      } on FirebaseException catch (e) {
+        debugPrint('FirebaseException addTask: [${e.code}] ${e.message}');
+        String errorMessage = 'Erro ao salvar evento na nuvem.';
+        if (e.code == 'permission-denied') {
+          errorMessage = 'Permissão negada no Firestore.';
+        } else if (e.code == 'unavailable') {
+          errorMessage = 'Sem conexão. Salvando localmente no aparelho.';
+        }
+        _showMessage(errorMessage, isError: true);
       } catch (e) {
-        debugPrint('Erro Firestore: $e');
+        debugPrint('Erro Firestore inesperado: $e');
+        _showMessage('Erro ao salvar no banco. Salvando localmente.', isError: true);
       }
     }
 
-    // Se estiver sem conexão ou sem autenticação, salva localmente
-    setState(() {
-      final newTask = TaskModel(
-        id: DateTime.now().microsecondsSinceEpoch.toString(),
-        title: title,
-        time: time,
-        dateKey: dateKey,
-        icon: selectedOption.icon,
-        iconColor: selectedOption.color,
-        iconBgColor: selectedOption.bgColor,
-        category: selectedOption.label,
-        createdAt: DateTime.now(),
-      );
+    // Se estiver sem conexão ou sem autenticação, salva localmente com persistência
+    final newTask = TaskModel(
+      id: 'local_${DateTime.now().microsecondsSinceEpoch}',
+      title: title,
+      time: time,
+      dateKey: dateKey,
+      icon: selectedOption.icon,
+      iconColor: selectedOption.color,
+      iconBgColor: selectedOption.bgColor,
+      category: selectedOption.label,
+      createdAt: DateTime.now(),
+    );
 
+    setState(() {
       if (!_localTasksByDate.containsKey(dateKey)) {
         _localTasksByDate[dateKey] = [];
       }
       _localTasksByDate[dateKey]!.add(newTask);
     });
-    _showMessage('Evento criado!');
+    await _saveLocalTasks();
+
+    _showMessage(
+      collection == null
+          ? 'Evento salvo no aparelho! Conecte sua conta para salvar na nuvem.'
+          : 'Evento salvo localmente no aparelho.',
+    );
   }
 
   // Deletar Tarefa
   Future<void> _deleteTask(String taskId, String dateKey) async {
     final collection = _getUserTasksCollection();
 
+    // Se for tarefa local persistida
+    if (taskId.startsWith('local_') ||
+        _localTasksByDate[dateKey]?.any((t) => t.id == taskId) == true) {
+      setState(() {
+        _localTasksByDate[dateKey]?.removeWhere((t) => t.id == taskId);
+      });
+      await _saveLocalTasks();
+      _showMessage('Evento removido com sucesso!');
+      return;
+    }
+
     if (collection != null) {
       try {
         await collection.doc(taskId).delete();
-        _showMessage('Evento removido com sucesso!');
+        _showMessage('Evento removido da nuvem!');
+        return;
+      } on FirebaseException catch (e) {
+        debugPrint('Erro ao remover do Firestore: [${e.code}] ${e.message}');
+        String errorMessage = 'Erro ao remover do banco.';
+        if (e.code == 'permission-denied') {
+          errorMessage = 'Permissão negada ao remover evento.';
+        }
+        _showMessage(errorMessage, isError: true);
         return;
       } catch (e) {
-        debugPrint('Erro Firestore delete: $e');
+        debugPrint('Erro inesperado delete: $e');
       }
     }
 
     setState(() {
       _localTasksByDate[dateKey]?.removeWhere((t) => t.id == taskId);
     });
+    await _saveLocalTasks();
     _showMessage('Evento removido com sucesso!');
   }
 
@@ -445,7 +632,10 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
                         final title = titleController.text.trim();
                         final time = timeController.text.trim();
 
-                        if (title.isEmpty) return;
+                        if (title.isEmpty) {
+                          _showMessage('Digite o título do evento.', isError: true);
+                          return;
+                        }
 
                         final dateKey = _formatDateKey(_selectedDate);
                         final selectedIcon = availableIcons[selectedIconIndex];
@@ -585,6 +775,49 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              // Status de Conexão Nuvem / Local
+                              Container(
+                                margin: const EdgeInsets.only(bottom: 14),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.22),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      collection != null
+                                          ? (snapshot.hasError
+                                              ? Icons.cloud_off_rounded
+                                              : Icons.cloud_done_rounded)
+                                          : Icons.cloud_queue_rounded,
+                                      color: Colors.white,
+                                      size: 15,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Flexible(
+                                      child: Text(
+                                        collection != null
+                                            ? (snapshot.hasError
+                                                ? 'Erro no Firestore: ${snapshot.error}'
+                                                : 'Nuvem sincronizada (${_auth.currentUser?.email ?? 'Usuário'})')
+                                            : 'Modo Local (Offline) • Eventos salvos no aparelho',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
                               // Mês e Setas Interativas Originais
                               Row(
                                 mainAxisAlignment:
@@ -757,8 +990,38 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
 
                               const SizedBox(height: 16),
 
-                              // Lista de Tarefas (Zero dados padrão)
-                              if (currentTasks.isEmpty)
+                              // Lista de Tarefas (Zero dados padrão ou Carregando)
+                              if (snapshot.connectionState ==
+                                      ConnectionState.waiting &&
+                                  !snapshot.hasData &&
+                                  _localTasksByDate.isEmpty)
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 32),
+                                  child: Center(
+                                    child: Column(
+                                      children: [
+                                        SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.5,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        SizedBox(height: 12),
+                                        Text(
+                                          'Carregando eventos...',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                              else if (currentTasks.isEmpty)
                                 Padding(
                                   padding: const EdgeInsets.symmetric(
                                       vertical: 24),

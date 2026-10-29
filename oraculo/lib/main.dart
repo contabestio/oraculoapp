@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'data/books_repository.dart';
+import 'services/admin_service.dart';
 import 'pages/dashboard.dart';
 import 'theme/app_theme.dart';
 
@@ -8,9 +10,25 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    ).timeout(const Duration(seconds: 4));
   } catch (e) {
     debugPrint('Firebase init error: $e');
+  }
+
+  try {
+    // Inicializa o repositório central de livros / materiais
+    await BooksRepository.instance.initialize().timeout(const Duration(seconds: 3));
+  } catch (e) {
+    debugPrint('BooksRepository init error: $e');
+  }
+
+  try {
+    // Inicializa o serviço de verificação de Administradores
+    await AdminService.instance.initialize().timeout(const Duration(seconds: 3));
+  } catch (e) {
+    debugPrint('AdminService init error: $e');
   }
 
   runApp(const OraculoApp());
