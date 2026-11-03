@@ -89,7 +89,8 @@ final List<BookModel> universalBooksCatalog = [
     title: 'Redação Nota 1000',
     category: BookCategories.redacao,
     imageUrl: BookCovers.redacao,
-    description: 'Guia definitivo para dominar o texto dissertativo-argumentativo do ENEM, com estruturas, repertórios e modelos práticos.',
+    description:
+        'Guia definitivo para dominar o texto dissertativo-argumentativo do ENEM, com estruturas, repertórios e modelos práticos.',
     readTimeMinutes: 15,
     author: 'Equipe de Redação Oráculo',
     tags: const ['redação', 'enem', 'nota 1000', 'dissertação', 'vestibular'],
@@ -97,7 +98,8 @@ final List<BookModel> universalBooksCatalog = [
       BookSectionModel(
         id: 'red-1',
         title: '1. O Esqueleto do Texto Nota 1000',
-        content: '''A redação do ENEM exige uma estrutura dissertativa-argumentativa dividida rigidamente em 4 parágrafos:
+        content:
+            '''A redação do ENEM exige uma estrutura dissertativa-argumentativa dividida rigidamente em 4 parágrafos:
 
 • Parágrafo 1 - Introdução: Apresentação do tema + contextualização (repertório) + tese com 2 argumentos (D1 e D2).
 • Parágrafo 2 - Desenvolvimento 1: Tópico frasal relacionado ao primeiro argumento + fundamentação teórica + desfecho crítico.
@@ -108,12 +110,14 @@ final List<BookModel> universalBooksCatalog = [
           'Sua tese deve conter explicitamente as duas causas que serão debatidas em D1 e D2.',
           'Nunca deixe de contextualizar o tema logo na primeira linha.',
         ],
-        studyTip: 'Evite frases longas demais na introdução. O leitor precisa entender sua tese já no primeiro olhar.',
+        studyTip:
+            'Evite frases longas demais na introdução. O leitor precisa entender sua tese já no primeiro olhar.',
       ),
       BookSectionModel(
         id: 'red-2',
         title: '2. Proposta de Intervenção Nota Máxima (200 pts)',
-        content: '''A competência 5 avalia a capacidade de propor uma solução aos problemas discutidos. Para alcançar a pontuação máxima de 200 pontos, seu parágrafo DEVE conter:
+        content:
+            '''A competência 5 avalia a capacidade de propor uma solução aos problemas discutidos. Para alcançar a pontuação máxima de 200 pontos, seu parágrafo DEVE conter:
 
 1. AGENTE: Quem executará a ação? (Ex: Ministério da Educação, Governo Federal, Mídia).
 2. AÇÃO: O que será feito? (Ex: Deve instituir campanhas educativas permanentes).
@@ -125,7 +129,8 @@ final List<BookModel> universalBooksCatalog = [
           'O detalhamento pode ser uma oração explicativa como: ", órgão responsável por..."',
           'Respeite sempre os direitos humanos!',
         ],
-        studyTip: 'Use o conectivo "Portanto," para iniciar o parágrafo de conclusão e indicar fechamento lógico.',
+        studyTip:
+            'Use o conectivo "Portanto," para iniciar o parágrafo de conclusão e indicar fechamento lógico.',
       ),
     ],
   ),
@@ -135,7 +140,8 @@ final List<BookModel> universalBooksCatalog = [
     title: 'Estrutura Argumentativa',
     category: BookCategories.redacao,
     imageUrl: BookCovers.cadernos,
-    description: 'Como encadear argumentos consistentes, usar conectivos interparágrafos e evitar falhas de coerência.',
+    description:
+        'Como encadear argumentos consistentes, usar conectivos interparágrafos e evitar falhas de coerência.',
     readTimeMinutes: 12,
     author: 'Equipe de Redação Oráculo',
     tags: const ['argumentação', 'coesão', 'conectivos', 'coerência'],
@@ -143,7 +149,8 @@ final List<BookModel> universalBooksCatalog = [
       BookSectionModel(
         id: 'arg-1',
         title: '1. Conectivos Interparágrafos Essenciais',
-        content: '''Para garantir a nota máxima na Competência 4 (coesão), é obrigatório utilizar conectivos interparágrafos (no início do D2 e da Conclusão):
+        content:
+            '''Para garantir a nota máxima na Competência 4 (coesão), é obrigatório utilizar conectivos interparágrafos (no início do D2 e da Conclusão):
 
 • No início do D2: "Ademais,", "Outrossim,", "Além disso,", "Por outro lado," (caso seja uma antítese).
 • No início da Conclusão: "Portanto,", "Em suma,", "Dessa maneira,", "Destarte,".
@@ -153,7 +160,8 @@ Dentro dos parágrafos, garanta pelo menos dois conectivos intraparágrafos em c
           'Nunca inicie o D2 sem um conectivo interparágrafo.',
           'Varie o vocabulário para evitar repetições excessivas da mesma conjunção.',
         ],
-        studyTip: 'Cuidado com "Sob esse viés" no primeiro parágrafo: só use conectivos referenciais se houver algo anterior a que se referir!',
+        studyTip:
+            'Cuidado com "Sob esse viés" no primeiro parágrafo: só use conectivos referenciais se houver algo anterior a que se referir!',
       ),
     ],
   ),
@@ -166,7 +174,8 @@ Dentro dos parágrafos, garanta pelo menos dois conectivos intraparágrafos em c
     title: 'Matemática e Funções',
     category: BookCategories.matematica,
     imageUrl: BookCovers.matematica,
-    description: 'Estudo aprofundado de funções de 1º e 2º grau, gráficos, vértices, máximos e mínimos aplicados a questões reais.',
+    description:
+        'Estudo aprofundado de funções de 1º e 2º grau, gráficos, vértices, máximos e mínimos aplicados a questões reais.',
     readTimeMinutes: 18,
     author: 'Prof. Carlos - Oráculo Exatas',
     tags: const ['matemática', 'funções', 'álgebra', 'gráfico', 'enem'],
@@ -186,7 +195,8 @@ ax + b = 0  =>  x = -b / a''',
           'Taxa de variação: a = Δy / Δx',
           'O coeficiente linear representa o valor fixo em problemas cotidianos (ex: taxa fixa de táxi).',
         ],
-        studyTip: 'Em gráficos de função afim no ENEM, identifique primeiro o ponto em que a reta cruza o eixo vertical Y: esse é imediatamente o seu termo independente b!',
+        studyTip:
+            'Em gráficos de função afim no ENEM, identifique primeiro o ponto em que a reta cruza o eixo vertical Y: esse é imediatamente o seu termo independente b!',
       ),
       BookSectionModel(
         id: 'mat-2',
@@ -204,7 +214,8 @@ Se a < 0: a parábola tem concavidade para baixo e o vértice é ponto de MÁXIM
           'Quando a questão pedir "qual o valor que gera o lucro máximo", calcula-se Xv.',
           'Quando a questão pedir "qual é o lucro máximo obtido", calcula-se Yv.',
         ],
-        studyTip: 'Você também pode achar o Yv substituindo o Xv calculado diretamente na função f(Xv), sem precisar calcular Δ!',
+        studyTip:
+            'Você também pode achar o Yv substituindo o Xv calculado diretamente na função f(Xv), sem precisar calcular Δ!',
       ),
     ],
   ),
@@ -214,7 +225,8 @@ Se a < 0: a parábola tem concavidade para baixo e o vértice é ponto de MÁXIM
     title: 'Geometria Espacial',
     category: BookCategories.matematica,
     imageUrl: BookCovers.geometria,
-    description: 'Fórmulas essenciais de prismas, cilindros, cones, esferas e pirâmides com macetes de cálculo de volume.',
+    description:
+        'Fórmulas essenciais de prismas, cilindros, cones, esferas e pirâmides com macetes de cálculo de volume.',
     readTimeMinutes: 14,
     author: 'Prof. Carlos - Oráculo Exatas',
     tags: const ['geometria', 'espacial', 'volumes', 'prismas', 'cilindros'],
@@ -222,7 +234,8 @@ Se a < 0: a parábola tem concavidade para baixo e o vértice é ponto de MÁXIM
       BookSectionModel(
         id: 'geo-1',
         title: '1. Sólidos de Seção Constante (Prismas e Cilindros)',
-        content: '''Todos os sólidos com bases paralelas e idênticas seguem a mesma regra fundamental de volume:
+        content:
+            '''Todos os sólidos com bases paralelas e idênticas seguem a mesma regra fundamental de volume:
 
 Volume = Área da Base × Altura (V = Ab · h)
 
@@ -234,7 +247,8 @@ Volume = Área da Base × Altura (V = Ab · h)
           'Cilindro é apenas um prisma de base circular.',
           'Fique atento às conversões de unidades: 1 m³ = 1.000 L e 1 cm³ = 1 mL.',
         ],
-        studyTip: 'No ENEM é comum aproximar π por 3 ou 3,14. Sempre leia com atenção o comando do enunciado!',
+        studyTip:
+            'No ENEM é comum aproximar π por 3 ou 3,14. Sempre leia com atenção o comando do enunciado!',
       ),
     ],
   ),
@@ -247,7 +261,8 @@ Volume = Área da Base × Altura (V = Ab · h)
     title: 'Literatura e Clássicos',
     category: BookCategories.linguagens,
     imageUrl: BookCovers.literatura,
-    description: 'Panorama das escolas literárias brasileiras: Romantismo, Realismo, Naturalismo, Modernismo e autores centrais.',
+    description:
+        'Panorama das escolas literárias brasileiras: Romantismo, Realismo, Naturalismo, Modernismo e autores centrais.',
     readTimeMinutes: 20,
     author: 'Profª. Beatriz - Oráculo Letras',
     tags: const ['literatura', 'machado de assis', 'modernismo', 'enem'],
@@ -255,7 +270,8 @@ Volume = Área da Base × Altura (V = Ab · h)
       BookSectionModel(
         id: 'lit-1',
         title: '1. O Realismo e Machado de Assis',
-        content: '''O Realismo no Brasil tem marco inicial em 1881 com a publicação de "Memórias Póstumas de Brás Cubas".
+        content:
+            '''O Realismo no Brasil tem marco inicial em 1881 com a publicação de "Memórias Póstumas de Brás Cubas".
 
 Principais características machadianas:
 • Narrador não confiável e irônico.
@@ -267,7 +283,8 @@ Principais características machadianas:
           'Diferente do Romantismo idealizado, o Realismo desnuda o adultério, a falsidade e as ambições materiais.',
           'Dom Casmurro e a dúvida sobre Capitu simbolizam o ciúme e a ótica distorcida de Bentinho.',
         ],
-        studyTip: 'Nas provas, foque no tom irônico: Machado nunca diz abertamente o que condena; ele finge elogiar para expor a decadência moral.',
+        studyTip:
+            'Nas provas, foque no tom irônico: Machado nunca diz abertamente o que condena; ele finge elogiar para expor a decadência moral.',
       ),
     ],
   ),
@@ -277,7 +294,8 @@ Principais características machadianas:
     title: 'Gramática e Interpretação',
     category: BookCategories.linguagens,
     imageUrl: BookCovers.linguagens,
-    description: 'Sintaxe aplicada, regência, crase, concordância e leitura analítica de textos verbais e não-verbais.',
+    description:
+        'Sintaxe aplicada, regência, crase, concordância e leitura analítica de textos verbais e não-verbais.',
     readTimeMinutes: 14,
     author: 'Profª. Beatriz - Oráculo Letras',
     tags: const ['gramática', 'crase', 'sintaxe', 'concordância'],
@@ -285,7 +303,8 @@ Principais características machadianas:
       BookSectionModel(
         id: 'gram-1',
         title: '1. Regras Infalíveis do Uso da Crase',
-        content: '''A crase é a fusão da preposição 'a' com o artigo definido feminino 'a(s)' ou pronomes aquele(s), aquela(s).
+        content:
+            '''A crase é a fusão da preposição 'a' com o artigo definido feminino 'a(s)' ou pronomes aquele(s), aquela(s).
 
 Macetes práticos:
 1. Substitua a palavra feminina seguinte por um termo masculino correspondente. Se virar "ao", há crase!
@@ -297,7 +316,8 @@ Macetes práticos:
           'Vou a, volto de: crase pra quê? Vou a, volto da: crase no A!',
           'Locuções adverbiais femininas têm crase obrigatória: à noite, à tarde, às pressas.',
         ],
-        studyTip: 'Pronomes indefinidos (a todos, a qualquer) repelem artigo feminino, logo nunca admitem crase.',
+        studyTip:
+            'Pronomes indefinidos (a todos, a qualquer) repelem artigo feminino, logo nunca admitem crase.',
       ),
     ],
   ),
@@ -310,7 +330,8 @@ Macetes práticos:
     title: 'Física Mecânica & Óptica',
     category: BookCategories.ciencias,
     imageUrl: BookCovers.fisica,
-    description: 'Cinemática, Leis de Newton, Trabalho e Energia Mecânica, além dos fenômenos ópticos de reflexão e refração.',
+    description:
+        'Cinemática, Leis de Newton, Trabalho e Energia Mecânica, além dos fenômenos ópticos de reflexão e refração.',
     readTimeMinutes: 16,
     author: 'Prof. Henrique - Oráculo Ciências',
     tags: const ['física', 'newton', 'mecânica', 'energia', 'óptica'],
@@ -318,7 +339,8 @@ Macetes práticos:
       BookSectionModel(
         id: 'fis-1',
         title: '1. As 3 Leis de Newton e Dinâmica',
-        content: '''1ª Lei (Inércia): Todo corpo permanece em seu estado de repouso ou de movimento retilíneo uniforme (MRU), a menos que uma força resultante atue sobre ele.
+        content:
+            '''1ª Lei (Inércia): Todo corpo permanece em seu estado de repouso ou de movimento retilíneo uniforme (MRU), a menos que uma força resultante atue sobre ele.
 2ª Lei (Princípio Fundamental da Dinâmica):
 FR = m · a
 A aceleração adquirida é diretamente proporcional à força resultante e inversamente proporcional à massa.
@@ -327,7 +349,8 @@ A aceleração adquirida é diretamente proporcional à força resultante e inve
           'Forças de ação e reação jamais se anulam porque atuam em corpos distintos.',
           'Peso é força gravitacional: P = m · g (massa é invariável, peso varia com a gravidade).',
         ],
-        studyTip: 'Faça sempre o diagrama de corpo livre isolando o objeto antes de somar as forças.',
+        studyTip:
+            'Faça sempre o diagrama de corpo livre isolando o objeto antes de somar as forças.',
       ),
     ],
   ),
@@ -337,7 +360,8 @@ A aceleração adquirida é diretamente proporcional à força resultante e inve
     title: 'Química Geral & Orgânica',
     category: BookCategories.ciencias,
     imageUrl: BookCovers.quimica,
-    description: 'Tabela periódica, estequiometria, ligações químicas e identificação das principais funções orgânicas.',
+    description:
+        'Tabela periódica, estequiometria, ligações químicas e identificação das principais funções orgânicas.',
     readTimeMinutes: 15,
     author: 'Prof. Henrique - Oráculo Ciências',
     tags: const ['química', 'estequiometria', 'orgânica', 'funções'],
@@ -358,7 +382,8 @@ A aceleração adquirida é diretamente proporcional à força resultante e inve
           'Pontes de hidrogênio ocorrem intensamente em álcoois e ácidos carboxílicos, elevando o ponto de ebulição.',
           'Ácidos carboxílicos reagem com álcoois gerando éster e água (Esterificação).',
         ],
-        studyTip: 'Aromas artificiais de doces e frutas quase sempre vêm de ésteres de cadeia curta.',
+        studyTip:
+            'Aromas artificiais de doces e frutas quase sempre vêm de ésteres de cadeia curta.',
       ),
     ],
   ),
@@ -368,7 +393,8 @@ A aceleração adquirida é diretamente proporcional à força resultante e inve
     title: 'Biologia Celular e Genética',
     category: BookCategories.ciencias,
     imageUrl: BookCovers.biologia,
-    description: 'Organelas celulares, respiração aeróbica, mitose, meiose e as leis mendelianas com aplicações em biotecnologia.',
+    description:
+        'Organelas celulares, respiração aeróbica, mitose, meiose e as leis mendelianas com aplicações em biotecnologia.',
     readTimeMinutes: 17,
     author: 'Profª. Camila - Oráculo Bio',
     tags: const ['biologia', 'genética', 'célula', 'dna', 'mendel'],
@@ -376,7 +402,8 @@ A aceleração adquirida é diretamente proporcional à força resultante e inve
       BookSectionModel(
         id: 'bio-1',
         title: '1. Primeira Lei de Mendel e Hereditariedade',
-        content: '''A Primeira Lei de Mendel (Princípio da Segregação dos Fatores) estabelece que cada característica é determinada por um par de fatores (alelos) que se separam na formação dos gametas.
+        content:
+            '''A Primeira Lei de Mendel (Princípio da Segregação dos Fatores) estabelece que cada característica é determinada por um par de fatores (alelos) que se separam na formação dos gametas.
 
 • Homozigoto: Indivíduo com alelos iguais (AA ou aa).
 • Heterozigoto: Indivíduo com alelos diferentes (Aa).
@@ -386,7 +413,8 @@ A aceleração adquirida é diretamente proporcional à força resultante e inve
           'Cruzamento Aa x Aa resulta na proporção fenotípica clássica 3:1 e genotípica 1:2:1.',
           'Em heredogramas, indivíduos afetados com pais não afetados indicam caráter recessivo.',
         ],
-        studyTip: 'Para identificar se uma doença é recessiva em heredogramas, procure o clássico "pais iguais gerando filho diferente". O filho diferente sempre é recessivo!',
+        studyTip:
+            'Para identificar se uma doença é recessiva em heredogramas, procure o clássico "pais iguais gerando filho diferente". O filho diferente sempre é recessivo!',
       ),
     ],
   ),
@@ -395,11 +423,31 @@ A aceleração adquirida é diretamente proporcional à força resultante e inve
   // CIÊNCIAS HUMANAS
   // -------------------------------------------------------------------------
   BookModel(
+    id: 'livro-1793723493857',
+    title: 'História da Arte',
+    category: 'Humanas',
+    imageUrl:
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSCRpZKp1o_B2lBdG9FOMc8_l1WDigw3gUXl_wJipLu8w&s=10',
+    description: r'''História da Arte - Antiguidade''',
+    readTimeMinutes: 10,
+    author: 'Toda Matéria',
+    tags: const ['Artes', 'História', 'Estética'],
+    sections: [
+      BookSectionModel(
+        id: 'sec-1',
+        title: 'Arte Pré-histórica',
+        content:
+            r'''Ainda no período pré-histórico, ou seja, antes da invenção da escrita, o ser humano já produzia a arte pré-histórica.  Tudo o que sabemos sobre essas civilizações foi descoberto por pesquisadores através da análise de objetos e pinturas desses povos.  Esse período da humanidade foi bastante longo e, portanto, dividido em 3 fases: Paleolítico Inferior (500 mil a.C.); Paleolítico Superior (30 mil a.C.) e Neolítico (10 mil a.C.).  Foi na época do Paleolítico Superior que se descobriu as primeiras expressões artísticas, como a arte rupestre das cavernas de Lascaux (França) e Altamira (Espanha).  <Características da arte no paleolítico> Essas primeiras manifestações artísticas da humanidade foram localizadas por meio de escavações arqueológicas, realizadas a partir do século XX sobretudo na Ásia, África e Europa. Em grande parte, a arte nesse período era produzida nas cavernas, local onde os nômades, caçadores e coletores, se protegiam das intempéries e dos animais selvagens. No entanto, além das pinturas, eles também produziram objetos decorados e esculturas de formas humanas, sobretudo de formas femininas volumosas (indicando supostamente a fertilidade). Os materiais utilizados eram rochas, ossos ou madeira. Acredita-se que as formas femininas eram utilizadas em rituais associados à fertilidade e à sexualidade. Outros tipos de figuras abstratas foram encontradas, por exemplo, riscos e linhas emaranhadas. A arte no paleolítico está intimamente relacionada ao campo espiritual. Naquela época já se buscava explicações sobrenaturais para a vida na Terra. Acredita-se que embora tenha havido a substituição do homem neandertal pelo homo sapiens no paleolítico superior, os humanos ainda se apoiavam fortemente em conteúdos simbólicos e imaginativos, mesclando assim, a vida e a arte. Em resumo, a arte fazia parte da vida e possuía uma finalidade mágica. A arte representava um "ritual de iniciação", ou seja, eram representadas cenas de caça nas paredes das cavernas. Acreditava-se que, de alguma maneira, aquilo se tornaria realidade e, portanto, permitiria a sobrevivência do grupo. Da mesma maneira, as esculturas femininas podiam trazer a fertilidade, garantindo assim, a reprodução humana. A mais conhecida é a "Vênus de Willendorf", encontrada na Áustria. Em resumo, a arte nesse período possuía um objetivo, finalidade ou propósito de interação do homem e da natureza. Assim, apresentava características realistas e naturalistas.''',
+      ),
+    ],
+  ),
+  BookModel(
     id: 'historia-do-brasil',
     title: 'História do Brasil',
     category: BookCategories.humanas,
     imageUrl: BookCovers.historia,
-    description: 'Da colonização e economia açucareira até a Era Vargas, Ditadura Militar e o processo de redemocratização.',
+    description:
+        'Da colonização e economia açucareira até a Era Vargas, Ditadura Militar e o processo de redemocratização.',
     readTimeMinutes: 19,
     author: 'Prof. André - Oráculo Humanas',
     tags: const ['história', 'brasil', 'vargas', 'ditadura', 'cidadania'],
@@ -407,7 +455,8 @@ A aceleração adquirida é diretamente proporcional à força resultante e inve
       BookSectionModel(
         id: 'his-1',
         title: '1. A Era Vargas (1930 - 1945)',
-        content: '''Getúlio Vargas governou o Brasil por 15 anos consecutivos nesta primeira fase, dividida em três momentos:
+        content:
+            '''Getúlio Vargas governou o Brasil por 15 anos consecutivos nesta primeira fase, dividida em três momentos:
 
 1. Governo Provisório (1930-1934): Dissolução do Congresso, Revolução Constitucionalista de 1932 em SP e criação da Constituição de 1934 (voto feminino, voto secreto e leis trabalhistas).
 2. Governo Constitucional (1934-1937): Polarização política entre a AIB (integralistas fascistas) e a ANL (aliancistas de esquerda). Intentona Comunista de 1935 e forjamento do Plano Cohen.
@@ -416,7 +465,8 @@ A aceleração adquirida é diretamente proporcional à força resultante e inve
           'Vargas praticava o trabalhismo: concedia direitos sociais enquanto controlava os sindicatos através da estrutura corporativista.',
           'A entrada do Brasil na Segunda Guerra ao lado dos Aliados gerou uma contradição insustentável para a ditadura interna, levando à queda de Vargas em 1945.',
         ],
-        studyTip: 'O DIP (Departamento de Imprensa e Propaganda) é tema recorrente no ENEM como instrumento de construção do mito do "Pai dos Pobres".',
+        studyTip:
+            'O DIP (Departamento de Imprensa e Propaganda) é tema recorrente no ENEM como instrumento de construção do mito do "Pai dos Pobres".',
       ),
     ],
   ),
@@ -426,15 +476,23 @@ A aceleração adquirida é diretamente proporcional à força resultante e inve
     title: 'Filosofia e Sociologia',
     category: BookCategories.humanas,
     imageUrl: BookCovers.filosofia,
-    description: 'Contratualismo (Hobbes, Locke, Rousseau), Ética, Iluminismo e os clássicos da sociologia: Marx, Weber e Durkheim.',
+    description:
+        'Contratualismo (Hobbes, Locke, Rousseau), Ética, Iluminismo e os clássicos da sociologia: Marx, Weber e Durkheim.',
     readTimeMinutes: 16,
     author: 'Prof. André - Oráculo Humanas',
-    tags: const ['filosofia', 'sociologia', 'ética', 'contratualismo', 'durkheim'],
+    tags: const [
+      'filosofia',
+      'sociologia',
+      'ética',
+      'contratualismo',
+      'durkheim',
+    ],
     sections: [
       BookSectionModel(
         id: 'fil-1',
         title: '1. Os Filósofos Contratualistas',
-        content: '''O Contratualismo busca explicar a origem do Estado e da sociedade civil a partir de um pacto entre os homens:
+        content:
+            '''O Contratualismo busca explicar a origem do Estado e da sociedade civil a partir de um pacto entre os homens:
 
 • Thomas Hobbes ("O Leviatã"): O homem no estado de natureza vive em guerra de todos contra todos ("o homem é o lobo do homem"). Para garantir a segurança e a vida, transfere sua liberdade a um soberano absoluto.
 • John Locke ("Segundo Tratado sobre o Governo Civil"): No estado de natureza, os homens possuem direitos naturais (vida, liberdade e propriedade). O Estado surge para assegurar esses direitos; se falhar, o povo tem o direito de rebelião.
@@ -444,7 +502,8 @@ A aceleração adquirida é diretamente proporcional à força resultante e inve
           'Locke é o pai do liberalismo clássico e defensor da propriedade privada como direito natural.',
           'Rousseau é a base da democracia direta e participativa.',
         ],
-        studyTip: 'Associe Locke a direito à propriedade e rebelião; associe Hobbes a medo e segurança; associe Rousseau a bondade natural e vontade geral.',
+        studyTip:
+            'Associe Locke a direito à propriedade e rebelião; associe Hobbes a medo e segurança; associe Rousseau a bondade natural e vontade geral.',
       ),
     ],
   ),
