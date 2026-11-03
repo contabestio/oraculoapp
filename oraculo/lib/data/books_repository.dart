@@ -18,7 +18,7 @@ class BooksRepository {
   BooksRepository._();
   static final BooksRepository instance = BooksRepository._();
 
-  static const String _storageKey = 'oraculo_dev_custom_books_v1';
+  static const String _storageKey = 'oraculo_dev_custom_books_v2';
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   final ValueNotifier<List<BookModel>> booksNotifier =
@@ -37,7 +37,23 @@ class BooksRepository {
     // 2. Carrega eventuais edições locais salvas pelo desenvolvedor
     try {
       final prefs = await SharedPreferences.getInstance();
-      final storedJson = prefs.getString(_storageKey);
+
+      // Migração suave da versão v1 para v2 (preservando livros personalizados criados pelo usuário)
+      String? storedJson = prefs.getString(_storageKey);
+      if (storedJson == null && prefs.containsKey('oraculo_dev_custom_books_v1')) {
+        final oldJson = prefs.getString('oraculo_dev_custom_books_v1');
+        if (oldJson != null && oldJson.isNotEmpty) {
+          final List<dynamic> decoded = jsonDecode(oldJson);
+          final customList = decoded
+              .map((e) => BookModel.fromMap(Map<String, dynamic>.from(e as Map)))
+              .where((b) => !bookMap.containsKey(b.id))
+              .toList();
+          if (customList.isNotEmpty) {
+            storedJson = jsonEncode(customList.map((b) => b.toMap()).toList());
+            await prefs.setString(_storageKey, storedJson);
+          }
+        }
+      }
 
       if (storedJson != null && storedJson.isNotEmpty) {
         final List<dynamic> decoded = jsonDecode(storedJson);
