@@ -64,9 +64,9 @@ class AppTheme {
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: ZoomPageTransitionsBuilder(),
-          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+         
           TargetPlatform.windows: ZoomPageTransitionsBuilder(),
-          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+          
           TargetPlatform.linux: ZoomPageTransitionsBuilder(),
         },
       ),

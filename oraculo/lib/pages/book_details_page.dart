@@ -8,11 +8,8 @@ import '../widgets/animations.dart';
 import '../widgets/book_cover_card.dart';
 import '../widgets/book_simulado_tab.dart';
 import '../widgets/dev_book_editor_sheet.dart';
-<<<<<<< HEAD
 import 'notes_and_insights_page.dart';
-=======
-import '../widgets/formatted_book_content.dart';
->>>>>>> 75def4909a1abd8747b6916f819fa81c3dfdce34
+import 'package:oraculo/widgets/formatted_book_content.dart';
 
 /// Tela de Leitura e Conteúdo do Livro (Material de Estudo)
 ///
