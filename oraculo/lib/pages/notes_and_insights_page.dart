@@ -74,7 +74,14 @@ class NoteEditorResult {
 // ==========================================================
 
 class NotesAndInsightsPage extends StatefulWidget {
-  const NotesAndInsightsPage({super.key});
+  final String? initialBookTitle;
+  final String? initialBookId;
+
+  const NotesAndInsightsPage({
+    super.key,
+    this.initialBookTitle,
+    this.initialBookId,
+  });
 
   @override
   State<NotesAndInsightsPage> createState() => _NotesAndInsightsPageState();
@@ -107,7 +114,11 @@ class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
   }
 
   /// Abre a tela de edição para criar uma nova nota ou atualizar uma existente.
-  Future<void> _openNote({NoteItem? existingNote}) async {
+  Future<void> _openNote({
+    NoteItem? existingNote,
+    String? defaultTitle,
+    String? defaultContent,
+  }) async {
     final collection = _getUserNotesCollection();
     if (collection == null) {
       _showFeedback(
@@ -117,12 +128,21 @@ class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
       return;
     }
 
+    final effectiveTitle = defaultTitle ??
+        (existingNote == null && widget.initialBookTitle != null
+            ? 'Anotações: ${widget.initialBookTitle}'
+            : null);
+
     // Navega para o editor com transição suave
     final NoteEditorResult? result = await Navigator.push<NoteEditorResult>(
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
-            NoteEditorPage(initialNote: existingNote),
+            NoteEditorPage(
+              initialNote: existingNote,
+              initialTitle: effectiveTitle,
+              initialContent: defaultContent,
+            ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           final curveAnimation = CurvedAnimation(
             parent: animation,
@@ -225,21 +245,27 @@ class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
                           color: _orange,
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.outlined_flag,
                               color: Colors.white,
                               size: 18,
                             ),
-                            SizedBox(width: 8),
-                            Text(
-                              'Metas',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                widget.initialBookTitle != null
+                                    ? 'Notas: ${widget.initialBookTitle}'
+                                    : 'Metas',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -250,7 +276,65 @@ class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
                 ),
               ),
 
-              const SizedBox(height: 32),
+              if (widget.initialBookTitle != null) ...[
+                const SizedBox(height: 12),
+                FadeSlideTransition(
+                  delay: const Duration(milliseconds: 100),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: _lilac.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: _darkPurple.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.bookmark_added_rounded, color: _darkPurple, size: 20),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Notas deste material: ${widget.initialBookTitle}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12.5,
+                              color: _darkPurple,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        BouncingPressable(
+                          onTap: () => _openNote(defaultTitle: 'Anotações: ${widget.initialBookTitle}'),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: _darkPurple,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.add, size: 14, color: Colors.white),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Criar Nota',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 24),
 
               // ------------------------------------------------------
               // PAINEL PRINCIPAL LILÁS ORIGINAL COM ANIMAÇÃO
@@ -558,8 +642,15 @@ class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
 
 class NoteEditorPage extends StatefulWidget {
   final NoteItem? initialNote;
+  final String? initialTitle;
+  final String? initialContent;
 
-  const NoteEditorPage({super.key, this.initialNote});
+  const NoteEditorPage({
+    super.key,
+    this.initialNote,
+    this.initialTitle,
+    this.initialContent,
+  });
 
   @override
   State<NoteEditorPage> createState() => _NoteEditorPageState();
@@ -574,11 +665,11 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     super.initState();
 
     _titleController = TextEditingController(
-      text: widget.initialNote?.title ?? '',
+      text: widget.initialNote?.title ?? widget.initialTitle ?? '',
     );
 
     _contentController = TextEditingController(
-      text: widget.initialNote?.content ?? '',
+      text: widget.initialNote?.content ?? widget.initialContent ?? '',
     );
   }
 

@@ -13,8 +13,21 @@ class SimuladoScoreService {
 
   static const String _localStorageKey = 'oraculo_simulado_scores_table_v1';
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  FirebaseAuth? get _auth {
+    try {
+      return FirebaseAuth.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  FirebaseFirestore? get _firestore {
+    try {
+      return FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
 
   final ValueNotifier<List<SimuladoScoreModel>> scoresNotifier =
       ValueNotifier<List<SimuladoScoreModel>>([]);
@@ -37,7 +50,7 @@ class SimuladoScoreService {
     required int answeredCount,
     required Map<int, int> userAnswers,
   }) async {
-    final user = _auth.currentUser;
+    final user = _auth?.currentUser;
     final userId = user?.uid ?? 'guest_user';
     final percentage = totalQuestions > 0
         ? ((score / totalQuestions) * 100).toDouble()
@@ -68,9 +81,9 @@ class SimuladoScoreService {
     await _saveToLocalTable(updatedList);
 
     // 3. Grava no Cloud Firestore se houver usuário autenticado
-    if (user != null) {
+    if (user != null && _firestore != null) {
       try {
-        await _firestore
+        await _firestore!
             .collection('users')
             .doc(user.uid)
             .collection('simulado_scores')
@@ -136,11 +149,11 @@ class SimuladoScoreService {
   }
 
   Future<void> _syncWithFirestore() async {
-    final user = _auth.currentUser;
-    if (user == null) return;
+    final user = _auth?.currentUser;
+    if (user == null || _firestore == null) return;
 
     try {
-      final snapshot = await _firestore
+      final snapshot = await _firestore!
           .collection('users')
           .doc(user.uid)
           .collection('simulado_scores')

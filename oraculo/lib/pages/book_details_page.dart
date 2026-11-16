@@ -8,6 +8,7 @@ import '../widgets/animations.dart';
 import '../widgets/book_cover_card.dart';
 import '../widgets/book_simulado_tab.dart';
 import '../widgets/dev_book_editor_sheet.dart';
+import 'notes_and_insights_page.dart';
 
 /// Tela de Leitura e Conteúdo do Livro (Material de Estudo)
 ///
@@ -99,6 +100,26 @@ class _BookDetailsPageState extends State<BookDetailsPage> {
               overflow: TextOverflow.ellipsis,
             ),
             actions: [
+              // BOTÃO DE ACESSO DIRETO AO CADERNO DE NOTAS E INSIGHTS
+              IconButton(
+                tooltip: 'Caderno de Notas e Insights',
+                icon: const Icon(
+                  Icons.note_alt_outlined,
+                  color: Color(0xFF594A6D),
+                  size: 22,
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NotesAndInsightsPage(
+                        initialBookTitle: book.title,
+                        initialBookId: book.id,
+                      ),
+                    ),
+                  );
+                },
+              ),
               // BOTAO DE EDICAO: Apenas visível para contas de Administrador (inacessível a usuários regulares)
               if (AdminService.instance.isAdmin) ...[
                 IconButton(
@@ -412,6 +433,87 @@ class _BookDetailsPageState extends State<BookDetailsPage> {
                 if (_activeTabIndex == 1) ...[
                   BookSimuladoTab(book: book),
                 ] else ...[
+                  // ========================================================
+                  // ATALHO PARA O CADERNO DE NOTAS DO LIVRO
+                  // ========================================================
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 18),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF6F0FF),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFEADBFF)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF594A6D),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.edit_note_rounded, color: Colors.white, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Caderno de Notas & Insights',
+                                style: TextStyle(
+                                  fontFamily: 'Arial',
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13.5,
+                                  color: Color(0xFF3B2A56),
+                                ),
+                              ),
+                              Text(
+                                'Anote seus resumos e dúvidas sobre este livro',
+                                style: TextStyle(fontSize: 11.5, color: Colors.grey.shade700),
+                              ),
+                            ],
+                          ),
+                        ),
+                        BouncingPressable(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => NotesAndInsightsPage(
+                                  initialBookTitle: book.title,
+                                  initialBookId: book.id,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF594A6D),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Anotar',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                SizedBox(width: 4),
+                                Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 14),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
                 // ========================================================
                 // SELETOR DE CAPÍTULOS / TÓPICOS
                 // ========================================================

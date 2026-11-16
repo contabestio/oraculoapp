@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/book_model.dart';
+import '../models/simulado_score_model.dart';
+import '../services/simulado_score_service.dart';
+import '../pages/notes_and_insights_page.dart';
 import '../theme/app_theme.dart';
 import 'animations.dart';
 import 'enem_question_card.dart';
@@ -143,14 +146,32 @@ class _BookSimuladoTabState extends State<BookSimuladoTab> {
     }
   }
 
-  void _showResultSummary() {
+  Future<void> _showResultSummary({bool isEarlyFinish = false}) async {
     int correctCount = 0;
-    for (int i = 0; i < _questions.length; i++) {
-      if (_userAnswers[i] == _questions[i].correctOptionIndex) {
+    for (final index in _confirmedQuestions) {
+      if (_userAnswers[index] == _questions[index].correctOptionIndex) {
         correctCount++;
       }
     }
-    final percentage = ((correctCount / _questions.length) * 100).round();
+    final total = isEarlyFinish ? _confirmedQuestions.length : _questions.length;
+    final percentage = total > 0 ? ((correctCount / total) * 100).round() : 0;
+
+    // Gravação da pontuação na tabela do Banco de Dados (Cloud Firestore & Local)
+    try {
+      await SimuladoScoreService.instance.recordScore(
+        bookId: widget.book.id,
+        bookTitle: widget.book.title,
+        category: widget.book.category,
+        score: correctCount,
+        totalQuestions: _questions.length,
+        answeredCount: _confirmedQuestions.length,
+        userAnswers: _userAnswers,
+      );
+    } catch (e) {
+      debugPrint('Erro ao registrar pontuação no banco: $e');
+    }
+
+    if (!mounted) return;
 
     showDialog(
       context: context,
@@ -164,9 +185,9 @@ class _BookSimuladoTabState extends State<BookSimuladoTab> {
               size: 28,
             ),
             const SizedBox(width: 10),
-            const Text(
-              'Simulado Finalizado!',
-              style: TextStyle(fontFamily: 'Arial', fontWeight: FontWeight.bold, fontSize: 18),
+            Text(
+              isEarlyFinish ? 'Simulado Parcial Finalizado!' : 'Simulado Finalizado!',
+              style: const TextStyle(fontFamily: 'Arial', fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ],
         ),
@@ -204,6 +225,34 @@ class _BookSimuladoTabState extends State<BookSimuladoTab> {
               style: const TextStyle(fontSize: 13, color: AppTheme.mutedText),
               textAlign: TextAlign.center,
             ),
+            const SizedBox(height: 12),
+
+            // Confirmação de persistência na tabela do Banco de Dados
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F5E9),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFA5D6A7)),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.cloud_done_rounded, color: Color(0xFF2E7D32), size: 16),
+                  SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      'Pontuação salva no banco de dados!',
+                      style: TextStyle(
+                        color: Color(0xFF1B5E20),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
         actions: [
@@ -222,6 +271,97 @@ class _BookSimuladoTabState extends State<BookSimuladoTab> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text('Revisar Questões'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAttemptsHistoryDialog(List<SimuladoScoreModel> attempts) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.history_rounded, color: Color(0xFF1D4ED8), size: 24),
+            SizedBox(width: 8),
+            Text(
+              'Histórico de Pontuações',
+              style: TextStyle(fontFamily: 'Arial', fontSize: 17, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Registros salvos no banco de dados para "${widget.book.title}":',
+                style: const TextStyle(fontSize: 12.5, color: AppTheme.mutedText),
+              ),
+              const SizedBox(height: 12),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: attempts.length,
+                  separatorBuilder: (context, index) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final item = attempts[index];
+                    final dateStr =
+                        '${item.timestamp.day.toString().padLeft(2, '0')}/${item.timestamp.month.toString().padLeft(2, '0')}/${item.timestamp.year} às ${item.timestamp.hour.toString().padLeft(2, '0')}:${item.timestamp.minute.toString().padLeft(2, '0')}';
+                    final isPass = item.percentage >= 70;
+
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircleAvatar(
+                        radius: 18,
+                        backgroundColor: isPass ? const Color(0xFFE8F5E9) : AppTheme.orangeBg,
+                        child: Text(
+                          '${item.score}',
+                          style: TextStyle(
+                            color: isPass ? const Color(0xFF2E7D32) : AppTheme.orangeDark,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        '${item.score} de ${item.totalQuestions} acertos (${item.percentage.round()}%)',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                      ),
+                      subtitle: Text(
+                        dateStr,
+                        style: const TextStyle(fontSize: 11.5, color: AppTheme.mutedText),
+                      ),
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.cloud_done_rounded, size: 12, color: Color(0xFF2563EB)),
+                            SizedBox(width: 4),
+                            Text('DB', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Fechar'),
           ),
         ],
       ),
@@ -280,6 +420,91 @@ class _BookSimuladoTabState extends State<BookSimuladoTab> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // ========================================================
+        // HISTÓRICO DE PONTUAÇÕES SALVAS NO BANCO DE DADOS
+        // ========================================================
+        ValueListenableBuilder<List<SimuladoScoreModel>>(
+          valueListenable: SimuladoScoreService.instance.scoresNotifier,
+          builder: (context, allScores, _) {
+            final bookScores = allScores.where((s) => s.bookId == widget.book.id).toList();
+            if (bookScores.isEmpty) return const SizedBox.shrink();
+
+            final latest = bookScores.first;
+            final best = bookScores.reduce((a, b) => a.score >= b.score ? a : b);
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 14),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFBBF7D0)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF16A34A),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.cloud_done_rounded, color: Colors.white, size: 18),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Text(
+                              'Banco de Dados: Simulado Salvo',
+                              style: TextStyle(
+                                fontFamily: 'Arial',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12.5,
+                                color: Color(0xFF14532D),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFDCFCE7),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                '${bookScores.length} reg.',
+                                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF166534)),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Melhor: ${best.score}/${best.totalQuestions} (${best.percentage.round()}%) • Último: ${latest.score}/${latest.totalQuestions}',
+                          style: const TextStyle(fontSize: 11.5, color: Color(0xFF15803D)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => _showAttemptsHistoryDialog(bookScores),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    child: const Text(
+                      'Histórico',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF166534)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+
         // ========================================================
         // PAINEL DE CONTROLE DO SIMULADO (Progresso e Configurações)
         // ========================================================
@@ -442,35 +667,83 @@ class _BookSimuladoTabState extends State<BookSimuladoTab> {
 
               const SizedBox(height: 12),
 
-              // Controles: Alternar Modo de Visualização e Correção Instantânea
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              // Controles: Alternar Modo, Atalho para Notas e Correção
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                alignment: WrapAlignment.spaceBetween,
                 children: [
                   // Toggle Caderno Contínuo vs Foco
-                  Row(
-                    children: [
-                      ActionChip(
-                        avatar: Icon(
-                          _isFocusMode ? Icons.view_carousel_rounded : Icons.view_agenda_rounded,
-                          size: 16,
-                          color: AppTheme.orange,
-                        ),
-                        label: Text(
-                          _isFocusMode ? 'Modo Foco' : 'Caderno Completo',
-                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600),
-                        ),
-                        backgroundColor: Colors.white,
-                        side: BorderSide(color: Colors.grey.shade300),
-                        onPressed: () {
-                          setState(() {
-                            _isFocusMode = !_isFocusMode;
-                          });
-                        },
-                      ),
-                    ],
+                  ActionChip(
+                    avatar: Icon(
+                      _isFocusMode ? Icons.view_carousel_rounded : Icons.view_agenda_rounded,
+                      size: 16,
+                      color: AppTheme.orange,
+                    ),
+                    label: Text(
+                      _isFocusMode ? 'Modo Foco' : 'Caderno Completo',
+                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600),
+                    ),
+                    backgroundColor: Colors.white,
+                    side: BorderSide(color: Colors.grey.shade300),
+                    onPressed: () {
+                      setState(() {
+                        _isFocusMode = !_isFocusMode;
+                      });
+                    },
                   ),
+
+                  // Atalho Direto para a Página de Notas
+                  ActionChip(
+                    avatar: const Icon(
+                      Icons.edit_note_rounded,
+                      size: 16,
+                      color: Color(0xFF594A6D),
+                    ),
+                    label: const Text(
+                      'Caderno de Notas',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF594A6D),
+                      ),
+                    ),
+                    backgroundColor: const Color(0xFFF6F0FF),
+                    side: const BorderSide(color: Color(0xFFEADBFF)),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => NotesAndInsightsPage(
+                            initialBookTitle: widget.book.title,
+                            initialBookId: widget.book.id,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                  // Botão de Gravar Pontuação Parcial no Banco
+                  if (answeredCount > 0 && answeredCount < totalQuestions)
+                    ActionChip(
+                      avatar: const Icon(
+                        Icons.cloud_upload_outlined,
+                        size: 16,
+                        color: AppTheme.orangeDark,
+                      ),
+                      label: Text(
+                        'Salvar Pontuação ($answeredCount/$totalQuestions)',
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.orangeDark),
+                      ),
+                      backgroundColor: AppTheme.orangeBg,
+                      side: BorderSide(color: AppTheme.orange.withValues(alpha: 0.5)),
+                      onPressed: () => _showResultSummary(isEarlyFinish: true),
+                    ),
+
                   // Toggle Correção Instantânea
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       const Text(
                         'Correção Imediata',

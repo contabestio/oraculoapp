@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'data/books_repository.dart';
 import 'services/admin_service.dart';
+import 'services/simulado_score_service.dart';
 import 'pages/dashboard.dart';
 import 'theme/app_theme.dart';
 
@@ -29,6 +30,13 @@ void main() async {
     await AdminService.instance.initialize().timeout(const Duration(seconds: 3));
   } catch (e) {
     debugPrint('AdminService init error: $e');
+  }
+
+  try {
+    // Inicializa a tabela de pontuações de simulados do banco de dados
+    await SimuladoScoreService.instance.initialize().timeout(const Duration(seconds: 3));
+  } catch (e) {
+    debugPrint('SimuladoScoreService init error: $e');
   }
 
   runApp(const OraculoApp());
