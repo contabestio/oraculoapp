@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/book_model.dart';
 import 'universal_books_catalog.dart';
+import 'universal_enem_questions.dart';
 
 /// Repositório central de livros e materiais de estudo do Oráculo.
 ///
@@ -46,7 +47,13 @@ class BooksRepository {
             .toList();
 
         for (final customBook in customList) {
-          bookMap[customBook.id] = customBook;
+          if (customBook.questions.isEmpty) {
+            bookMap[customBook.id] = customBook.copyWith(
+              questions: UniversalEnemQuestions.getQuestionsForBook(customBook.id),
+            );
+          } else {
+            bookMap[customBook.id] = customBook;
+          }
         }
       }
     } catch (e) {
@@ -70,7 +77,12 @@ class BooksRepository {
         for (final doc in snapshot.docs) {
           final data = doc.data();
           data['id'] = doc.id;
-          final cloudBook = BookModel.fromMap(data);
+          var cloudBook = BookModel.fromMap(data);
+          if (cloudBook.questions.isEmpty) {
+            cloudBook = cloudBook.copyWith(
+              questions: UniversalEnemQuestions.getQuestionsForBook(cloudBook.id),
+            );
+          }
           currentMap[cloudBook.id] = cloudBook;
         }
 

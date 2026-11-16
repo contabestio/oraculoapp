@@ -6,6 +6,7 @@ import '../services/admin_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/animations.dart';
 import '../widgets/book_cover_card.dart';
+import '../widgets/book_simulado_tab.dart';
 import '../widgets/dev_book_editor_sheet.dart';
 
 /// Tela de Leitura e Conteúdo do Livro (Material de Estudo)
@@ -28,6 +29,7 @@ class BookDetailsPage extends StatefulWidget {
 class _BookDetailsPageState extends State<BookDetailsPage> {
   late String _bookId;
   int _currentSectionIndex = 0;
+  int _activeTabIndex = 0; // 0 = Conteúdo/Teoria, 1 = Simulado ENEM
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -271,6 +273,145 @@ class _BookDetailsPageState extends State<BookDetailsPage> {
 
                 const SizedBox(height: 20),
 
+                // ========================================================
+                // SELETOR DE ABAS: TEORIA & LEITURA vs SIMULADO ENEM
+                // ========================================================
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F1F5),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      // Aba 1: Teoria & Leitura
+                      Expanded(
+                        child: BouncingPressable(
+                          onTap: () {
+                            if (_activeTabIndex != 0) {
+                              setState(() {
+                                _activeTabIndex = 0;
+                              });
+                            }
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              color: _activeTabIndex == 0 ? Colors.white : Colors.transparent,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: _activeTabIndex == 0
+                                  ? [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.05),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.menu_book_rounded,
+                                  size: 16,
+                                  color: _activeTabIndex == 0 ? AppTheme.orange : AppTheme.mutedText,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Teoria & Leitura',
+                                  style: TextStyle(
+                                    fontFamily: 'Arial',
+                                    fontSize: 13,
+                                    fontWeight: _activeTabIndex == 0 ? FontWeight.bold : FontWeight.w600,
+                                    color: _activeTabIndex == 0 ? AppTheme.darkText : AppTheme.mutedText,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      // Aba 2: Simulado ENEM
+                      Expanded(
+                        child: BouncingPressable(
+                          onTap: () {
+                            if (_activeTabIndex != 1) {
+                              setState(() {
+                                _activeTabIndex = 1;
+                              });
+                            }
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              color: _activeTabIndex == 1 ? Colors.white : Colors.transparent,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: _activeTabIndex == 1
+                                  ? [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.05),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.assignment_outlined,
+                                  size: 16,
+                                  color: _activeTabIndex == 1 ? AppTheme.orange : AppTheme.mutedText,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Simulado ENEM',
+                                  style: TextStyle(
+                                    fontFamily: 'Arial',
+                                    fontSize: 13,
+                                    fontWeight: _activeTabIndex == 1 ? FontWeight.bold : FontWeight.w600,
+                                    color: _activeTabIndex == 1 ? AppTheme.darkText : AppTheme.mutedText,
+                                  ),
+                                ),
+                                if (book.questions.isNotEmpty) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                    decoration: BoxDecoration(
+                                      color: _activeTabIndex == 1 ? AppTheme.orange : const Color(0xFFE2E2EA),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      '${book.questions.length}',
+                                      style: TextStyle(
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: _activeTabIndex == 1 ? Colors.white : const Color(0xFF666666),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // ========================================================
+                // CONTEÚDO CONDICIONAL (TEORIA vs SIMULADO)
+                // ========================================================
+                if (_activeTabIndex == 1) ...[
+                  BookSimuladoTab(book: book),
+                ] else ...[
                 // ========================================================
                 // SELETOR DE CAPÍTULOS / TÓPICOS
                 // ========================================================
@@ -572,40 +713,59 @@ class _BookDetailsPageState extends State<BookDetailsPage> {
                         Expanded(
                           child: BouncingPressable(
                             onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Row(
-                                    children: [
-                                      Icon(Icons.celebration_rounded, color: Colors.white, size: 20),
-                                      SizedBox(width: 8),
-                                      Text('Parabéns! Leitura concluída.'),
-                                    ],
+                              if (book.questions.isNotEmpty) {
+                                setState(() {
+                                  _activeTabIndex = 1;
+                                });
+                                _scrollToTop();
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Row(
+                                      children: [
+                                        Icon(Icons.celebration_rounded, color: Colors.white, size: 20),
+                                        SizedBox(width: 8),
+                                        Text('Parabéns! Leitura concluída.'),
+                                      ],
+                                    ),
+                                    backgroundColor: const Color(0xFF2E7D32),
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                   ),
-                                  backgroundColor: const Color(0xFF2E7D32),
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                ),
-                              );
-                              Navigator.pop(context);
+                                );
+                                Navigator.pop(context);
+                              }
                             },
                             child: Container(
                               height: 46,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF2E7D32),
+                                color: book.questions.isNotEmpty ? AppTheme.orange : const Color(0xFF2E7D32),
                                 borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: (book.questions.isNotEmpty ? AppTheme.orange : const Color(0xFF2E7D32))
+                                        .withValues(alpha: 0.35),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.check_rounded, size: 18, color: Colors.white),
-                                  SizedBox(width: 6),
                                   Text(
-                                    'Concluir Leitura',
-                                    style: TextStyle(
+                                    book.questions.isNotEmpty ? 'Fazer Simulado ENEM' : 'Concluir Leitura',
+                                    style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13,
                                       color: Colors.white,
                                     ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Icon(
+                                    book.questions.isNotEmpty ? Icons.arrow_forward_rounded : Icons.check_rounded,
+                                    size: 18,
+                                    color: Colors.white,
                                   ),
                                 ],
                               ),
@@ -631,6 +791,24 @@ class _BookDetailsPageState extends State<BookDetailsPage> {
                               color: AppTheme.darkText,
                             ),
                           ),
+                          if (book.questions.isNotEmpty) ...[
+                            const SizedBox(height: 14),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                setState(() {
+                                  _activeTabIndex = 1;
+                                });
+                              },
+                              icon: const Icon(Icons.assignment_outlined),
+                              label: Text('Acessar Simulado ENEM (${book.questions.length} Questões)'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.orange,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              ),
+                            ),
+                          ],
                           if (AdminService.instance.isAdmin) ...[
                             const SizedBox(height: 12),
                             ElevatedButton.icon(
@@ -638,8 +816,8 @@ class _BookDetailsPageState extends State<BookDetailsPage> {
                               icon: const Icon(Icons.add),
                               label: const Text('Inserir Conteúdo (Admin)'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.orange,
-                                foregroundColor: Colors.white,
+                                backgroundColor: AppTheme.surfaceSoft,
+                                foregroundColor: AppTheme.darkText,
                               ),
                             ),
                           ],
@@ -648,6 +826,7 @@ class _BookDetailsPageState extends State<BookDetailsPage> {
                     ),
                   ),
                 ],
+              ], // Fecha o else do _activeTabIndex
               ],
             ),
           ),

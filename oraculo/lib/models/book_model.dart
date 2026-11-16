@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'enem_question_model.dart';
+
+export 'enem_question_model.dart';
 
 /// =========================================================================
 /// CAPAS REUTILIZÁVEIS PRONTAS PARA COPIAR E COLAR
@@ -155,6 +158,7 @@ class BookModel {
   final String author;
   final List<String> tags;
   final List<BookSectionModel> sections;
+  final List<EnemQuestionModel> questions;
   final bool isCustom;
 
   const BookModel({
@@ -167,6 +171,7 @@ class BookModel {
     this.author = 'Equipe Oráculo',
     this.tags = const [],
     this.sections = const [],
+    this.questions = const [],
     this.isCustom = false,
   });
 
@@ -192,6 +197,7 @@ class BookModel {
     required String content,
     String? studyTip,
     List<String> keyTakeaways = const [],
+    List<EnemQuestionModel> questions = const [],
   }) {
     return BookModel(
       id: id,
@@ -211,6 +217,7 @@ class BookModel {
           keyTakeaways: keyTakeaways,
         ),
       ],
+      questions: questions,
     );
   }
 
@@ -224,6 +231,7 @@ class BookModel {
     String? author,
     List<String>? tags,
     List<BookSectionModel>? sections,
+    List<EnemQuestionModel>? questions,
     bool? isCustom,
   }) {
     return BookModel(
@@ -236,6 +244,7 @@ class BookModel {
       author: author ?? this.author,
       tags: tags ?? this.tags,
       sections: sections ?? this.sections,
+      questions: questions ?? this.questions,
       isCustom: isCustom ?? this.isCustom,
     );
   }
@@ -251,6 +260,7 @@ class BookModel {
       'author': author,
       'tags': tags,
       'sections': sections.map((s) => s.toMap()).toList(),
+      'questions': questions.map((q) => q.toMap()).toList(),
       'isCustom': isCustom,
     };
   }
@@ -272,6 +282,10 @@ class BookModel {
           const [],
       sections: (map['sections'] as List<dynamic>?)
               ?.map((s) => BookSectionModel.fromMap(Map<String, dynamic>.from(s as Map)))
+              .toList() ??
+          const [],
+      questions: (map['questions'] as List<dynamic>?)
+              ?.map((q) => EnemQuestionModel.fromMap(Map<String, dynamic>.from(q as Map)))
               .toList() ??
           const [],
       isCustom: map['isCustom'] == true,
@@ -302,6 +316,13 @@ class BookModel {
       buffer.writeln('  sections: [');
       for (final s in sections) {
         buffer.writeln('${s.toDartCode(indent: '    ')},');
+      }
+      buffer.writeln('  ],');
+    }
+    if (questions.isNotEmpty) {
+      buffer.writeln('  questions: [');
+      for (final q in questions) {
+        buffer.writeln('${q.toDartCode(indent: '    ')},');
       }
       buffer.writeln('  ],');
     }

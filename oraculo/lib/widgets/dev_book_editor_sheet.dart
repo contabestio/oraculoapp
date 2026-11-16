@@ -187,6 +187,7 @@ class _DevBookEditorSheetState extends State<DevBookEditorSheet> {
           : _authorController.text.trim(),
       tags: tags,
       sections: sections,
+      questions: widget.bookToEdit?.questions ?? const [],
       isCustom: true,
     );
   }

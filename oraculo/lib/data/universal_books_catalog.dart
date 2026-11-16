@@ -1,4 +1,5 @@
 import '../models/book_model.dart';
+import 'universal_enem_questions.dart';
 
 // ============================================================================
 // ✂️ ÁREA DE COPIAR E COLAR (TODOS OS COMPONENTES PARA CRIAR UM LIVRO NOVO)
@@ -128,6 +129,7 @@ final List<BookModel> universalBooksCatalog = [
         studyTip: 'Use o conectivo "Portanto," para iniciar o parágrafo de conclusão e indicar fechamento lógico.',
       ),
     ],
+    questions: UniversalEnemQuestions.getQuestionsForBook('redacao-nota-1000'),
   ),
 
   BookModel(
@@ -156,6 +158,7 @@ Dentro dos parágrafos, garanta pelo menos dois conectivos intraparágrafos em c
         studyTip: 'Cuidado com "Sob esse viés" no primeiro parágrafo: só use conectivos referenciais se houver algo anterior a que se referir!',
       ),
     ],
+    questions: UniversalEnemQuestions.getQuestionsForBook('estrutura-argumentativa'),
   ),
 
   // -------------------------------------------------------------------------
@@ -207,6 +210,7 @@ Se a < 0: a parábola tem concavidade para baixo e o vértice é ponto de MÁXIM
         studyTip: 'Você também pode achar o Yv substituindo o Xv calculado diretamente na função f(Xv), sem precisar calcular Δ!',
       ),
     ],
+    questions: UniversalEnemQuestions.getQuestionsForBook('matematica-e-funcoes'),
   ),
 
   BookModel(
@@ -237,6 +241,7 @@ Volume = Área da Base × Altura (V = Ab · h)
         studyTip: 'No ENEM é comum aproximar π por 3 ou 3,14. Sempre leia com atenção o comando do enunciado!',
       ),
     ],
+    questions: UniversalEnemQuestions.getQuestionsForBook('geometria-espacial'),
   ),
 
   // -------------------------------------------------------------------------
@@ -270,6 +275,7 @@ Principais características machadianas:
         studyTip: 'Nas provas, foque no tom irônico: Machado nunca diz abertamente o que condena; ele finge elogiar para expor a decadência moral.',
       ),
     ],
+    questions: UniversalEnemQuestions.getQuestionsForBook('literatura-e-classicos'),
   ),
 
   BookModel(
@@ -300,6 +306,7 @@ Macetes práticos:
         studyTip: 'Pronomes indefinidos (a todos, a qualquer) repelem artigo feminino, logo nunca admitem crase.',
       ),
     ],
+    questions: UniversalEnemQuestions.getQuestionsForBook('gramatica-e-interpretacao'),
   ),
 
   // -------------------------------------------------------------------------
@@ -330,6 +337,7 @@ A aceleração adquirida é diretamente proporcional à força resultante e inve
         studyTip: 'Faça sempre o diagrama de corpo livre isolando o objeto antes de somar as forças.',
       ),
     ],
+    questions: UniversalEnemQuestions.getQuestionsForBook('fisica-mecanica-optica'),
   ),
 
   BookModel(
@@ -361,6 +369,7 @@ A aceleração adquirida é diretamente proporcional à força resultante e inve
         studyTip: 'Aromas artificiais de doces e frutas quase sempre vêm de ésteres de cadeia curta.',
       ),
     ],
+    questions: UniversalEnemQuestions.getQuestionsForBook('quimica-geral-organica'),
   ),
 
   BookModel(
@@ -389,6 +398,7 @@ A aceleração adquirida é diretamente proporcional à força resultante e inve
         studyTip: 'Para identificar se uma doença é recessiva em heredogramas, procure o clássico "pais iguais gerando filho diferente". O filho diferente sempre é recessivo!',
       ),
     ],
+    questions: UniversalEnemQuestions.getQuestionsForBook('biologia-celular-genetica'),
   ),
 
   // -------------------------------------------------------------------------
@@ -419,6 +429,7 @@ A aceleração adquirida é diretamente proporcional à força resultante e inve
         studyTip: 'O DIP (Departamento de Imprensa e Propaganda) é tema recorrente no ENEM como instrumento de construção do mito do "Pai dos Pobres".',
       ),
     ],
+    questions: UniversalEnemQuestions.getQuestionsForBook('historia-do-brasil'),
   ),
 
   BookModel(
@@ -447,5 +458,6 @@ A aceleração adquirida é diretamente proporcional à força resultante e inve
         studyTip: 'Associe Locke a direito à propriedade e rebelião; associe Hobbes a medo e segurança; associe Rousseau a bondade natural e vontade geral.',
       ),
     ],
+    questions: UniversalEnemQuestions.getQuestionsForBook('filosofia-e-sociologia'),
   ),
 ];
