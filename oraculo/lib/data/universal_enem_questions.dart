@@ -34,6 +34,8 @@ class UniversalEnemQuestions {
     // Ciências Humanas
     'historia-do-brasil': historiaDoBrasilQuestions,
     'filosofia-e-sociologia': filosofiaESociologiaQuestions,
+    'livro-1793723493857': historiaDaArteQuestions,
+    'historia-da-arte': historiaDaArteQuestions,
   };
 
   /// Retorna as questões ENEM associadas ao livro pelo seu ID.

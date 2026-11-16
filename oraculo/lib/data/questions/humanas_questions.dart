@@ -3,6 +3,7 @@ import '../../models/enem_question_model.dart';
 /// Questões ENEM para os conteúdos de Ciências Humanas:
 /// 1. História do Brasil ('historia-do-brasil') - 10 questões
 /// 2. Filosofia e Sociologia ('filosofia-e-sociologia') - 10 questões
+/// 3. História da Arte ('historia-da-arte' / 'livro-1793723493857') - 10 questões
 
 final List<EnemQuestionModel> historiaDoBrasilQuestions = [
   const EnemQuestionModel(
@@ -387,5 +388,198 @@ final List<EnemQuestionModel> filosofiaESociologiaQuestions = [
     correctOptionIndex: 1,
     explanation:
         'Para John Locke, o poder político é um contrato de confiança: o governo existe unicamente para salvaguardar os direitos naturais (vida, liberdade, propriedade). Quando o Estado rompe esse pacto e se torna tirânico, o povo possui o direito inalienável de resistência e rebelião.',
+  ),
+];
+
+final List<EnemQuestionModel> historiaDaArteQuestions = [
+  const EnemQuestionModel(
+    id: 'art-his-q1',
+    number: 1,
+    yearSource: 'ENEM 2020',
+    contextText:
+        'No Parque Nacional Serra da Capivara, no Piauí, encontram-se milhares de pinturas rupestres datadas de milhares de anos. As cenas retratam figuras humanas em atividades cotidianas de dança, rituais e caça a animais da megafauna extinta.',
+    questionText:
+        'A análise dos vestígios da arte rupestre na pré-história brasileira permite compreender que essas manifestações:',
+    options: [
+      'Tinham função meramente comercial e de precificação de trocas de mercadorias entre tribos.',
+      'Constituíam sistemas complexos de comunicação e rituais simbólicos integrados ao cotidiano e à sobrevivência dos grupos humanos.',
+      'Seguiam normas acadêmicas rigorosas importadas das cortes europeias do período moderno.',
+      'Restringiam-se a decorações recreativas desprovidas de significado coletivo ou religioso.',
+      'Eram elaboradas com tintas sintéticas a base de polímeros acrílicos e solventes industriais.',
+    ],
+    correctOptionIndex: 1,
+    explanation:
+        'A arte rupestre pré-histórica possuía caráter místico-religioso, comunicativo e de coesão comunitária: registrar animais e rituais nas cavernas fazia parte de práticas de sobrevivência e representação simbólica do mundo.',
+  ),
+  const EnemQuestionModel(
+    id: 'art-his-q2',
+    number: 2,
+    yearSource: 'ENEM 2019',
+    contextText:
+        'A "Vênus de Willendorf", estatueta de calcário de cerca de 11 centímetros descoberta na Áustria e datada do Paleolítico Superior, apresenta formas anatômicas femininas com seios e quadris bastante volumosos e ausência intencional de traços faciais definidos.',
+    questionText:
+        'Do ponto de vista antropológico e artístico, a ênfase nessas características corporais está associada à:',
+    options: [
+      'Celebração de padrões de moda e vestuário da aristocracia da época.',
+      'Simbolização da fertilidade, fecundidade e garantia de continuidade biológica da espécie em tempos hostis.',
+      'Crítica sarcástica aos hábitos alimentares dos chefes caçadores pré-históricos.',
+      'Demonstração da incapacidade técnica de esculpir outros membros do corpo humano.',
+      'Representação de divindades punitivas associadas à destruição da natureza.',
+    ],
+    correctOptionIndex: 1,
+    explanation:
+        'As estatuetas femininas do Paleolítico (chamadas Vênus) destacam intencionalmente os atributos da maternidade e fecundidade (seios, abdômen e quadris fartos), funcionando como amuletos de fertilidade para o clã.',
+  ),
+  const EnemQuestionModel(
+    id: 'art-his-q3',
+    number: 3,
+    yearSource: 'ENEM 2021',
+    contextText:
+        'Na Grécia Antiga clássica (século V a.C.), a escultura e a arquitetura buscavam o ideal de "mímesis" (imitação da natureza aperfeiçoada pela razão), orientando-se pelo cânone das proporções matemáticas e pela simetria harmônica do corpo humano.',
+    questionText:
+        'Essa concepção estética fundamentava-se no princípio filosófico e cultural do:',
+    options: [
+      'Teocentrismo místico, que subordinava a forma humana à insignificância perante o sobrenatural.',
+      'Antropocentrismo racionalista, que elegia o homem como medida de todas as coisas e buscava o equilíbrio formal e a beleza ideal.',
+      'Iconoclastia radical, que proibia qualquer retratação tridimensional da anatomia corporal.',
+      'Subjetivismo abstrato, avesso a qualquer regra de proporção ou rigor anatômico.',
+      'Pessimismo niilista, que via na arte um engano prejudicial ao funcionamento da pólis militarizada.',
+    ],
+    correctOptionIndex: 1,
+    explanation:
+        'A arte grega clássica unia antropocentrismo e racionalismo: o homem era a medida e o centro do cosmos, inspirando esculturas equilibradas, harmônicas e proporcionais (como no Doríforo de Policleto).',
+  ),
+  const EnemQuestionModel(
+    id: 'art-his-q4',
+    number: 4,
+    yearSource: 'ENEM 2022',
+    contextText:
+        'Durante o século XVIII em Minas Gerais, no auge do ciclo do ouro e dos diamantes, floresceu o Barroco-Rococó mineiro, tendo Antônio Francisco Lisboa, o Aleijadinho, como sua maior expressão nas esculturas do Santuário de Bom Jesus de Matosinhos, em Congonhas.',
+    questionText:
+        'A originalidade da obra escultórica e arquitetônica do Barroco mineiro reside sobretudo na:',
+    options: [
+      'Cópia literal e sem adaptações dos modelos góticos medievais europeus.',
+      'Apropriação e recriação de técnicas europeias com uso de matérias-primas locais (como a pedra-sabão e o cedro) e expressividade dramática própria.',
+      'Ausência total de temas sacros, priorizando temas industriais e científicos modernos.',
+      'Rejeição ao rebuscamento visual em prol de uma estética minimalista despojada.',
+      'Execução exclusiva por artistas nobres vindos diretamente da corte de Versalhes.',
+    ],
+    correctOptionIndex: 1,
+    explanation:
+        'Aleijadinho e os mestres do Barroco mineiro adaptaram os cânones barrocos europeus à realidade brasileira, esculpindo em pedra-sabão e cedro figuras dramáticas, dinâmicas e de profunda carga expressiva e identidade local.',
+  ),
+  const EnemQuestionModel(
+    id: 'art-his-q5',
+    number: 5,
+    yearSource: 'ENEM 2018',
+    contextText:
+        'A Missão Artística Francesa, que chegou ao Brasil em 1816 a convite de D. João VI, incluiu pintores renomados como Jean-Baptiste Debret e Nicolas-Antoine Taunay, que fundaram as bases da Academia Imperial de Belas Artes.',
+    questionText:
+        'As aquarelas e gravuras de Jean-Baptiste Debret publicadas na obra "Viagem Pitoresca e Histórica ao Brasil" constituem importante fonte histórica porque:',
+    options: [
+      'Idealizavam o Brasil como um país totalmente despovoado e desprovido de conflitos.',
+      'Registraram minuciosamente as relações de trabalho escravista, os costumes cotidianos, as hierarquias sociais e a paisagem urbana do Rio de Janeiro oitocentista.',
+      'Eram fotos instantâneas obtidas com câmeras de alta precisão óptica importadas.',
+      'Ignoravam a presença da população negra e mestiça nos espaços públicos das cidades.',
+      'Defendiam a preservação irrestrita da selva tropical contra o avanço das estradas reais.',
+    ],
+    correctOptionIndex: 1,
+    explanation:
+        'A obra de Debret é fundamental para os historiadores porque documentou visualmente a vida urbana do Brasil Império, com destaque para a violência e o cotidiano da escravidão, os ofícios urbanos e os costumes da corte.',
+  ),
+  const EnemQuestionModel(
+    id: 'art-his-q6',
+    number: 6,
+    yearSource: 'ENEM 2021',
+    contextText:
+        'Realizada no Theatro Municipal de São Paulo em fevereiro de 1922, a Semana de Arte Moderna reuniu escritores, poetas, pintores e músicos como Mário de Andrade, Oswald de Andrade, Anita Malfatti e Heitor Villa-Lobos.',
+    questionText:
+        'O principal impacto cultural provocado pela Semana de 1922 no panorama das artes visuais e literárias brasileiras foi:',
+    options: [
+      'A submissão estrita das artes às normas acadêmicas portuguesas do século anterior.',
+      'O rompimento definitivo com o parnasianismo e com o academicismo formal, propondo a liberdade estética e a deglutição crítica da cultura moderna.',
+      'A proibição do uso de elementos folclóricos e do linguajar popular nos poemas.',
+      'O fechamento imediato de todos os museus e bibliotecas do país para evitar influências vanguardistas.',
+      'A condenação da música experimental e a volta compulsória às composições renascentistas.',
+    ],
+    correctOptionIndex: 1,
+    explanation:
+        'O Modernismo de 1922 atacou o academicismo engessado e o beletrismo parnasiano, reivindicando liberdade de criação formal e a construção de uma estética brasileira moderna e antenada com as vanguardas europeias.',
+  ),
+  const EnemQuestionModel(
+    id: 'art-his-q7',
+    number: 7,
+    yearSource: 'ENEM 2023',
+    contextText:
+        'Pintada em 1928 por Tarsila do Amaral e oferecida de presente a Oswald de Andrade, a tela "Abaporu" ("o homem que come gente", em tupi-guarani) inspirou a criação do Manifesto Antropófago.',
+    questionText:
+        'A proposta central da Antropofagia cultural na arte modernista brasileira consistia em:',
+    options: [
+      'Recusar todo contato com o conhecimento estrangeiro para cultuar exclusivamente o passado colonial.',
+      'Devorar criticamente a técnica e as ideias culturais externas, assimilando-as para reinventar uma arte genuinamente brasileira e autônoma.',
+      'Copiar com fidelidade mecânica as tendências artísticas de Paris sem qualquer transformação.',
+      'Restringir a pintura de cavalete apenas a retratos de imigrantes italianos no café.',
+      'Substituir as artes visuais pela alimentação ritualística indígena nas galerias.',
+    ],
+    correctOptionIndex: 1,
+    explanation:
+        'O conceito de Antropofagia modernista utilizou a metáfora canibal ritual: deglutir a cultura europeia vanguardista dominante e processá-la com base nas vivências, cores e mitos brasileiros, gerando uma arte original e não submissa.',
+  ),
+  const EnemQuestionModel(
+    id: 'art-his-q8',
+    number: 8,
+    yearSource: 'ENEM 2022',
+    contextText:
+        'No final dos anos 1950, o Neoconcretismo no Brasil, com artistas como Lygia Clark e Hélio Oiticica, rompeu com a geometria rígida e com a contemplação passiva da pintura de cavalete tradicional.',
+    questionText:
+        'Nas obras neoconcretas, como os "Bichos" (esculturas articuláveis de alumínio) e os "Parangolés" (capas coloridas para serem vestidas e movimentadas pelo corpo), o papel do público é ressignificado ao torná-lo:',
+    options: [
+      'Mero comprador financeiro que não deve encostar nos suportes museológicos.',
+      'Participante ativo e cocriador da obra, que ganha sentido somente através da experiência sensorial e corporal do interator.',
+      'Crítico técnico obrigado a classificar o peso exato de cada chapa metálica.',
+      'Observador distante impedido de entrar na sala de exposição sob pena de multa.',
+      'Modelo fotográfico contratado para permanecer estático perante os quadros.',
+    ],
+    correctOptionIndex: 1,
+    explanation:
+        'O Neoconcretismo rompeu a fronteira entre arte e vida: nas obras de Lygia Clark ("Bichos") e Hélio Oiticica ("Parangolés"), a escultura/objeto exige a manipulação física direta do participante para se desdobrar no espaço e no tempo.',
+  ),
+  const EnemQuestionModel(
+    id: 'art-his-q9',
+    number: 9,
+    yearSource: 'ENEM 2019',
+    contextText:
+        'Em 1970, durante o endurecimento da Ditadura Militar, Cildo Meireles realizou a obra "Inserções em Circuitos Ideológicos: Projeto Coca-Cola", gravando sobre garrafas de refrigerante de vidro mensagens críticas como "Yankees go home" antes de devolvê-las ao sistema normal de circulação comercial.',
+    questionText:
+        'Essa intervenção da Arte Conceitual caracteriza-se por:',
+    options: [
+      'Promover campanhas publicitárias visando o aumento de lucros da empresa multinacional.',
+      'Subverter os canais normais de circulação de massas para disseminar clandestinamente mensagens políticas de resistência contra a repressão e o imperialismo.',
+      'Destruir fisicamente as garrafas para impedir que a população consumisse líquidos engarrafados.',
+      'Limitar a arte às paredes brancas de galerias elitizadas onde a censura governamental não atuava.',
+      'Concorrer no mercado com marcas estatais de refrigerantes durante o Milagre Econômico.',
+    ],
+    correctOptionIndex: 1,
+    explanation:
+        'Cildo Meireles utilizou garrafas retornáveis de Coca-Cola como suporte de arte conceitual: ao inserir textos contestatórios que só ficavam legíveis quando a garrafa estava cheia de refrigerante escuro, o artista driblou a censura e fez o público carregar a mensagem.',
+  ),
+  const EnemQuestionModel(
+    id: 'art-his-q10',
+    number: 10,
+    yearSource: 'ENEM 2023',
+    contextText:
+        'Nas metrópoles contemporâneas, murais de grafite e intervenções visuais ocupam fachadas de edifícios, viadutos e empenas cegas, dialogando com os pedestres e com as dinâmicas sociais da cidade.',
+    questionText:
+        'O grafite, como expressão artística e manifestação da cultura visual contemporânea nos centros urbanos, desempenha o papel de:',
+    options: [
+      'Poluição visual que deve ser sumariamente erradicada pelos poderes municipais sem diálogo.',
+      'Democratização do acesso à arte, ao ressignificar a paisagem urbana, dar visibilidade a vozes marginalizadas e promover reflexão crítica no espaço público.',
+      'Reserva exclusiva de mercado para artistas formados nas mais tradicionais academias europeias.',
+      'Isolamento estético que não guarda relação com os problemas sociais vivenciados pela população.',
+      'Monopólio publicitário corporativo destinado a cobrir muros escolares com marcas de calçados.',
+    ],
+    correctOptionIndex: 1,
+    explanation:
+        'O grafite na contemporaneidade é amplamente reconhecido como arte visual e intervenção urbana: ele democratiza a experiência estética fora dos museus, questiona o cinza da cidade e dá visibilidade a narrativas periféricas e sociais.',
   ),
 ];

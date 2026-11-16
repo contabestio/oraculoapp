@@ -28,3 +28,4 @@ flutter:
   # Add your assets below the flutter section
   assets:
     - assets/background.png
+    - assets/app_logo.png

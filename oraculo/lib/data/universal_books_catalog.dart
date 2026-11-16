@@ -519,6 +519,7 @@ A arte paleolítica estava intimamente conectada à espiritualidade prática e �
             'Nas questões do ENEM e vestibulares, lembre-se: a arte rupestre não era decorativa nem para "galerias", e sim um instrumento mágico vital para a sobrevivência do grupo!',
       ),
     ],
+    questions: UniversalEnemQuestions.getQuestionsForBook('livro-1793723493857'),
   ),
   BookModel(
     id: 'historia-do-brasil',

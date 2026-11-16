@@ -1115,16 +1115,28 @@ class _DashboardPageState extends State<DashboardPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // LOGO OFICIAL DO APLICATIVO COM FUNDO TRANSPARENTE
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Image.asset(
+                      'assets/app_logo.png',
+                      width: 90,
+                      height: 90,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+
                   const Text(
                     'Bem-vindo(a) ao Oráculo',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 32,
+                      fontSize: 30,
                       fontWeight: FontWeight.bold,
+                      letterSpacing: -0.5,
                     ),
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 24),
 
                   // MODO LOGIN COM ANIMAÇÃO
                   if (!isCreatingAccount) ...[
@@ -1139,6 +1151,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     TextField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
                       style: const TextStyle(color: AppTheme.darkText),
                       decoration: InputDecoration(
                         hintText: 'E-mail',
@@ -1155,6 +1168,12 @@ class _DashboardPageState extends State<DashboardPage> {
                     TextField(
                       controller: _passwordController,
                       obscureText: true,
+                      textInputAction: TextInputAction.go,
+                      onSubmitted: (_) {
+                        if (!isProcessingAuth) {
+                          _login();
+                        }
+                      },
                       style: const TextStyle(color: AppTheme.darkText),
                       decoration: InputDecoration(
                         hintText: 'Senha',
@@ -1224,6 +1243,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     const SizedBox(height: 16),
                     TextField(
                       controller: _nameController,
+                      textInputAction: TextInputAction.next,
                       style: const TextStyle(color: AppTheme.darkText),
                       decoration: InputDecoration(
                         hintText: 'Seu nome',
@@ -1240,6 +1260,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     TextField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
                       style: const TextStyle(color: AppTheme.darkText),
                       decoration: InputDecoration(
                         hintText: 'E-mail',
@@ -1256,6 +1277,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     TextField(
                       controller: _passwordController,
                       obscureText: true,
+                      textInputAction: TextInputAction.next,
                       style: const TextStyle(color: AppTheme.darkText),
                       decoration: InputDecoration(
                         hintText: 'Senha (mín. 6 caracteres)',
@@ -1272,6 +1294,12 @@ class _DashboardPageState extends State<DashboardPage> {
                     TextField(
                       controller: _photoController,
                       keyboardType: TextInputType.url,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) {
+                        if (!isProcessingAuth) {
+                          _createAccount();
+                        }
+                      },
                       style: const TextStyle(color: AppTheme.darkText),
                       decoration: InputDecoration(
                         hintText: 'URL da foto de perfil (opcional)',
