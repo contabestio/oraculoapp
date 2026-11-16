@@ -5,6 +5,7 @@ import '../models/book_model.dart';
 import '../services/admin_service.dart';
 import '../theme/app_theme.dart';
 import 'animations.dart';
+import 'formatted_book_content.dart';
 
 /// Modal / Painel exclusivo para Desenvolvedores inserirem e editarem
 /// o conteúdo dos cartões de livros.
@@ -714,12 +715,150 @@ class _DevBookEditorSheetState extends State<DevBookEditorSheet> {
                               hint: 'Ex: 1. Introdução e Tese',
                             ),
                             const SizedBox(height: 10),
-                            _buildLabel('Conteúdo do Capítulo (Texto Completo)'),
-                            _buildTextField(
-                              controller: s.contentController,
-                              hint: 'Escreva a matéria, explicações, fórmulas e exemplos...',
-                              maxLines: 6,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                _buildLabel('Conteúdo do Capítulo (Com Quebras e Negrito)'),
+                                BouncingPressable(
+                                  onTap: () {
+                                    setState(() {
+                                      s.isPreview = !s.isPreview;
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: s.isPreview ? AppTheme.orange : AppTheme.orangeBg,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          s.isPreview ? Icons.edit_note_rounded : Icons.visibility_outlined,
+                                          size: 14,
+                                          color: s.isPreview ? Colors.white : AppTheme.orangeDark,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          s.isPreview ? 'Editar' : 'Ver Prévia',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: s.isPreview ? Colors.white : AppTheme.orangeDark,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
+                            const SizedBox(height: 6),
+                            if (!s.isPreview) ...[
+                              // Barra de Atalhos de Formatação Rápida
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                physics: const BouncingScrollPhysics(),
+                                child: Row(
+                                  children: [
+                                    _buildFormatChip(
+                                      label: 'Negrito',
+                                      icon: Icons.format_bold,
+                                      tooltip: 'Destacar texto em negrito (**palavra**)',
+                                      onTap: () {
+                                        s.insertFormatting('**', '**');
+                                        setState(() {});
+                                      },
+                                    ),
+                                    const SizedBox(width: 6),
+                                    _buildFormatChip(
+                                      label: 'Quebra Parágrafo',
+                                      icon: Icons.keyboard_return,
+                                      tooltip: 'Inserir nova linha e parágrafo separado',
+                                      onTap: () {
+                                        s.insertFormatting('\n\n', '');
+                                        setState(() {});
+                                      },
+                                    ),
+                                    const SizedBox(width: 6),
+                                    _buildFormatChip(
+                                      label: 'Marcador',
+                                      icon: Icons.format_list_bulleted,
+                                      tooltip: 'Inserir item com marcador',
+                                      onTap: () {
+                                        s.insertFormatting('\n• **Tópico:** ', '');
+                                        setState(() {});
+                                      },
+                                    ),
+                                    const SizedBox(width: 6),
+                                    _buildFormatChip(
+                                      label: 'Numeração',
+                                      icon: Icons.format_list_numbered,
+                                      tooltip: 'Inserir item numerado',
+                                      onTap: () {
+                                        s.insertFormatting('\n1. **Passo:** ', '');
+                                        setState(() {});
+                                      },
+                                    ),
+                                    const SizedBox(width: 6),
+                                    _buildFormatChip(
+                                      label: 'Subtítulo',
+                                      icon: Icons.title,
+                                      tooltip: 'Inserir subtítulo de seção',
+                                      onTap: () {
+                                        s.insertFormatting('\n### ', '\n');
+                                        setState(() {});
+                                      },
+                                    ),
+                                    const SizedBox(width: 6),
+                                    _buildFormatChip(
+                                      label: 'Destaque',
+                                      icon: Icons.format_quote_rounded,
+                                      tooltip: 'Inserir caixa de destaque/citação',
+                                      onTap: () {
+                                        s.insertFormatting('\n> **Atenção:** ', '\n');
+                                        setState(() {});
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              _buildTextField(
+                                controller: s.contentController,
+                                hint: 'Escreva a matéria. Use **negrito**, quebras duplas e • marcadores...',
+                                maxLines: 6,
+                              ),
+                              const SizedBox(height: 4),
+                              const Padding(
+                                padding: EdgeInsets.only(left: 4),
+                                child: Text(
+                                  '💡 Dica: Use **palavra** para negrito, duas quebras de linha para novos parágrafos e • para listas.',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: AppTheme.mutedText,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ),
+                            ] else ...[
+                              // Prévia Formatada em Tempo Real
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: AppTheme.orange.withValues(alpha: 0.6)),
+                                ),
+                                child: FormattedBookContent(
+                                  content: s.contentController.text.trim().isEmpty
+                                      ? '*(Nenhum texto digitado ainda...)*'
+                                      : s.contentController.text,
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: 10),
                             _buildLabel('Dica de Ouro / Atenção (Opcional)'),
                             _buildTextField(
@@ -880,6 +1019,43 @@ class _DevBookEditorSheetState extends State<DevBookEditorSheet> {
     );
   }
 
+  Widget _buildFormatChip({
+    required String label,
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: BouncingPressable(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14, color: AppTheme.orangeDark),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.darkText,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildTextField({
     required TextEditingController controller,
     required String hint,
@@ -936,6 +1112,7 @@ class _SectionDraft {
   final TextEditingController contentController;
   final TextEditingController tipController;
   final TextEditingController takeawaysController;
+  bool isPreview = false;
 
   _SectionDraft({
     required this.id,
@@ -944,6 +1121,35 @@ class _SectionDraft {
     required this.tipController,
     required this.takeawaysController,
   });
+
+  /// Insere formatação markdown (como **negrito**, quebras ou marcadores)
+  /// envolvendo o texto selecionado ou na posição do cursor.
+  void insertFormatting(String prefix, String suffix) {
+    final text = contentController.text;
+    final selection = contentController.selection;
+    final start = selection.start;
+    final end = selection.end;
+
+    if (start >= 0 && end > start) {
+      final selectedText = text.substring(start, end);
+      final newText = text.replaceRange(start, end, '$prefix$selectedText$suffix');
+      contentController.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection(
+          baseOffset: start + prefix.length,
+          extentOffset: end + prefix.length,
+        ),
+      );
+    } else {
+      final insertPos = start >= 0 ? start : text.length;
+      final insertText = '$prefix$suffix';
+      final newText = text.replaceRange(insertPos, insertPos, insertText);
+      contentController.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(offset: insertPos + prefix.length),
+      );
+    }
+  }
 
   factory _SectionDraft.fromSection(BookSectionModel section) {
     return _SectionDraft(

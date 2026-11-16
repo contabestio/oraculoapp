@@ -8,7 +8,11 @@ import '../widgets/animations.dart';
 import '../widgets/book_cover_card.dart';
 import '../widgets/book_simulado_tab.dart';
 import '../widgets/dev_book_editor_sheet.dart';
+<<<<<<< HEAD
 import 'notes_and_insights_page.dart';
+=======
+import '../widgets/formatted_book_content.dart';
+>>>>>>> 75def4909a1abd8747b6916f819fa81c3dfdce34
 
 /// Tela de Leitura e Conteúdo do Livro (Material de Estudo)
 ///
@@ -32,6 +36,7 @@ class _BookDetailsPageState extends State<BookDetailsPage> {
   int _currentSectionIndex = 0;
   int _activeTabIndex = 0; // 0 = Conteúdo/Teoria, 1 = Simulado ENEM
   final ScrollController _scrollController = ScrollController();
+  double _readingFontSize = 15.0;
 
   @override
   void initState() {
@@ -574,26 +579,90 @@ class _BookDetailsPageState extends State<BookDetailsPage> {
                 // CONTEÚDO DO CAPÍTULO ATUAL
                 // ========================================================
                 if (currentSection != null) ...[
-                  // Título do Capítulo
-                  Text(
-                    currentSection.title,
-                    style: const TextStyle(
-                      fontFamily: 'Arial',
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.darkTextHeading,
-                      height: 1.3,
-                    ),
+                  // Título do Capítulo e Controles de Leitura
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          currentSection.title,
+                          style: const TextStyle(
+                            fontFamily: 'Arial',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.darkTextHeading,
+                            height: 1.3,
+                          ),
+                        ),
+                      ),
+                      // Controles de Leitura e Tamanho do Texto
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppTheme.surfaceSoft,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFF0EAE1)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            BouncingPressable(
+                              onTap: () {
+                                if (_readingFontSize > 12.5) {
+                                  setState(() => _readingFontSize -= 1.0);
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                child: const Text(
+                                  'A-',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    color: AppTheme.darkText,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Container(
+                              height: 12,
+                              width: 1,
+                              color: Colors.grey.shade300,
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                            ),
+                            BouncingPressable(
+                              onTap: () {
+                                if (_readingFontSize < 19.5) {
+                                  setState(() => _readingFontSize += 1.0);
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                child: const Text(
+                                  'A+',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: AppTheme.orangeDark,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 14),
 
-                  // Corpo do Texto Formatado
+                  // Corpo do Texto Formatado com Quebras e Negrito
                   Container(
-                    padding: const EdgeInsets.all(18),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFFF2F2F5)),
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(color: const Color(0xFFF0EAE1)),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.03),
@@ -602,14 +671,9 @@ class _BookDetailsPageState extends State<BookDetailsPage> {
                         ),
                       ],
                     ),
-                    child: Text(
-                      currentSection.content,
-                      style: const TextStyle(
-                        fontFamily: 'Arial',
-                        fontSize: 14.5,
-                        color: Color(0xFF333333),
-                        height: 1.65,
-                      ),
+                    child: FormattedBookContent(
+                      content: currentSection.content,
+                      fontSize: _readingFontSize,
                     ),
                   ),
 

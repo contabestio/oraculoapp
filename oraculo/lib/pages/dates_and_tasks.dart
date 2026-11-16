@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/animations.dart';
+import '../widgets/hour_minute_picker.dart';
 
 // ==========================================================
 // MODELO DE DADOS PARA TAREFAS / EVENTOS (FIRESTORE & LOCAL)
@@ -532,19 +533,16 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
 
                     const SizedBox(height: 12),
 
-                    // Campo de Horário
-                    TextField(
-                      controller: timeController,
-                      style: const TextStyle(color: Color(0xFF333333)),
-                      decoration: InputDecoration(
-                        hintText: 'Horário (ex: 15:30)',
-                        filled: true,
-                        fillColor: const Color(0xFFF7F7F9),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
+                    // Seletor de Horário (Hora e Minuto)
+                    HourMinuteSelector(
+                      initialTime: timeController.text.isNotEmpty
+                          ? timeController.text
+                          : null,
+                      onTimeChanged: (newTime) {
+                        setModalState(() {
+                          timeController.text = newTime ?? '';
+                        });
+                      },
                     ),
 
                     const SizedBox(height: 16),
