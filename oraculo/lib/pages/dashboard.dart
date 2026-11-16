@@ -1086,35 +1086,41 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildAuthOverlay() {
     return Container(
+      width: double.infinity,
+      height: double.infinity,
+      alignment: Alignment.center,
       decoration: const BoxDecoration(
         image: DecorationImage(
           image: AssetImage('assets/background.png'),
           fit: BoxFit.cover,
         ),
       ),
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          physics: const BouncingScrollPhysics(),
-          child: FadeSlideTransition(
-            duration: const Duration(milliseconds: 350),
-            child: Container(
-              width: 370,
-              padding: const EdgeInsets.all(28),
-              decoration: BoxDecoration(
-                gradient: AppTheme.orangeGradient,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.18),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
+      child: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            child: FadeSlideTransition(
+              duration: const Duration(milliseconds: 350),
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 390),
+                width: double.infinity,
+                padding: const EdgeInsets.all(28),
+                decoration: BoxDecoration(
+                  gradient: AppTheme.orangeGradient,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.18),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
                   // LOGO OFICIAL DO APLICATIVO COM FUNDO TRANSPARENTE
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),
@@ -1142,6 +1148,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   if (!isCreatingAccount) ...[
                     const Text(
                       'Entre na sua conta',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 15,
@@ -1235,6 +1242,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   else ...[
                     const Text(
                       'Crie sua conta',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 15,
@@ -1396,6 +1404,8 @@ class _DashboardPageState extends State<DashboardPage> {
                     onTap: isProcessingAuth ? null : _loginWithGoogle,
                     child: Container(
                       height: 48,
+                      width: double.infinity,
+                      alignment: Alignment.center,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -1478,6 +1488,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           },
                     child: Text(
                       'Continuar como Convidado (modo offline)',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.85),
                         fontSize: 13,
@@ -1491,8 +1502,9 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 // Widget auxiliar para os botões da barra inferior com animação
