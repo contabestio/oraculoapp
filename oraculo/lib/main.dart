@@ -4,6 +4,7 @@ import 'firebase_options.dart';
 import 'data/books_repository.dart';
 import 'services/admin_service.dart';
 import 'services/simulado_score_service.dart';
+import 'services/event_notification_service.dart';
 import 'pages/dashboard.dart';
 import 'theme/app_theme.dart';
 
@@ -39,15 +40,25 @@ void main() async {
     debugPrint('SimuladoScoreService init error: $e');
   }
 
+  try {
+    // Inicializa o serviço de alertas e notificações de eventos (24h de antecedência)
+    await EventNotificationService.instance.initialize().timeout(const Duration(seconds: 3));
+  } catch (e) {
+    debugPrint('EventNotificationService init error: $e');
+  }
+
   runApp(const OraculoApp());
 }
 
 class OraculoApp extends StatelessWidget {
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
   const OraculoApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'Oráculo',
       theme: AppTheme.lightTheme,

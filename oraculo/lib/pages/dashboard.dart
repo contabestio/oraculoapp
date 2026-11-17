@@ -16,6 +16,8 @@ import '../services/admin_service.dart';
 import '../widgets/admin_management_dialog.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'book_details_page.dart';
+import '../services/event_notification_service.dart';
+import '../models/event_notification_model.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -82,6 +84,11 @@ class _DashboardPageState extends State<DashboardPage> {
           showLogin = true;
         }
       });
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        EventNotificationService.instance.checkUpcomingEvents(context: context);
+      }
     });
   }
 
@@ -822,6 +829,64 @@ class _DashboardPageState extends State<DashboardPage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+        // ÍCONE DE NOTIFICAÇÕES (LEMBRETES DE 24H)
+        ValueListenableBuilder<List<EventNotificationModel>>(
+          valueListenable:
+              EventNotificationService.instance.activeNotificationsNotifier,
+          builder: (context, notifs, _) {
+            final activeCount =
+                notifs.where((n) => n.isDueInNext24Hours).length;
+            return Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: BouncingPressable(
+                onTap: () => EventNotificationService.instance
+                    .showNotificationCenterModal(context),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Icon(
+                        activeCount > 0
+                            ? Icons.notifications_active_rounded
+                            : Icons.notifications_none_rounded,
+                        color: activeCount > 0
+                            ? AppTheme.orange
+                            : const Color(0xFF64748B),
+                        size: 24,
+                      ),
+                      if (activeCount > 0)
+                        Positioned(
+                          right: -3,
+                          top: -3,
+                          child: Container(
+                            padding: const EdgeInsets.all(3.5),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFEF4444),
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 16,
+                              minHeight: 16,
+                            ),
+                            child: Text(
+                              '$activeCount',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),

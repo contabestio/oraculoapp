@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/animations.dart';
 import '../widgets/hour_minute_picker.dart';
+import '../services/event_notification_service.dart';
 
 // ==========================================================
 // MODELO DE DADOS PARA TAREFAS / EVENTOS (FIRESTORE & LOCAL)
@@ -186,7 +187,9 @@ const List<IconOption> availableIcons = [
 ];
 
 class DatesAndTasksPage extends StatefulWidget {
-  const DatesAndTasksPage({super.key});
+  final DateTime? initialDate;
+
+  const DatesAndTasksPage({super.key, this.initialDate});
 
   @override
   State<DatesAndTasksPage> createState() => _DatesAndTasksPageState();
@@ -206,9 +209,9 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
-    _focusedMonth = DateTime(now.year, now.month);
-    _selectedDate = DateTime(now.year, now.month, now.day);
+    final initial = widget.initialDate ?? DateTime.now();
+    _focusedMonth = DateTime(initial.year, initial.month);
+    _selectedDate = DateTime(initial.year, initial.month, initial.day);
     _loadLocalTasks().then((_) {
       _syncLocalTasksToFirestore();
     });
@@ -407,6 +410,11 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
     });
     await _saveLocalTasks();
 
+    // Notifica o serviço de notificações para verificar se vence nas próximas 24h
+    if (mounted) {
+      EventNotificationService.instance.checkUpcomingEvents(context: context);
+    }
+
     _showMessage(
       collection == null
           ? 'Evento salvo no aparelho! Conecte sua conta para salvar na nuvem.'
@@ -417,6 +425,7 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
   // Deletar Tarefa
   Future<void> _deleteTask(String taskId, String dateKey) async {
     final collection = _getUserTasksCollection();
+    EventNotificationService.instance.removeNotificationForTask(taskId);
 
     // Se for tarefa local persistida
     if (taskId.startsWith('local_') ||
