@@ -10,6 +10,7 @@ import '../widgets/book_cover_card.dart';
 import 'dates_and_tasks.dart';
 import 'notes_and_insights_page.dart';
 import 'materials_page.dart';
+import 'account_config_page.dart';
 import '../data/books_repository.dart';
 import '../models/book_model.dart';
 import '../services/admin_service.dart';
@@ -391,68 +392,6 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // ==========================================================
-  // DIÁLOGO DE ATUALIZAÇÃO DE FOTO
-  // ==========================================================
-
-  void _updateProfilePhotoDialog() {
-    final TextEditingController urlController =
-        TextEditingController(text: userPhotoUrl ?? '');
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text(
-            'Atualizar Foto de Perfil',
-            style: TextStyle(color: AppTheme.darkText, fontWeight: FontWeight.bold),
-          ),
-          content: TextField(
-            controller: urlController,
-            style: const TextStyle(color: AppTheme.darkText),
-            decoration: const InputDecoration(
-              hintText: 'Cole a URL da sua imagem',
-              prefixIcon: Icon(Icons.link, color: AppTheme.orange),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar', style: TextStyle(color: AppTheme.darkText)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.orange,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () async {
-                final newUrl = urlController.text.trim();
-                Navigator.pop(context);
-
-                try {
-                  await _auth.currentUser
-                      ?.updatePhotoURL(newUrl.isEmpty ? null : newUrl);
-                  await _auth.currentUser?.reload();
-
-                  if (!mounted) return;
-                  setState(() {
-                    userPhotoUrl = _auth.currentUser?.photoURL;
-                  });
-                  _showMessage('Foto atualizada!');
-                } catch (e) {
-                  _showMessage('Erro ao atualizar foto.');
-                }
-              },
-              child: const Text('Salvar'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // ==========================================================
   // LOGOUT
   // ==========================================================
 
@@ -635,6 +574,66 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  void _refreshCurrentUserState() {
+    if (!mounted) return;
+    final User? user = _auth.currentUser;
+    if (user != null) {
+      setState(() {
+        userName = user.displayName?.trim().isNotEmpty == true
+            ? user.displayName!.trim()
+            : (user.email?.split('@').first ?? 'Estudante');
+        userPhotoUrl = user.photoURL;
+      });
+    }
+  }
+
+  Future<void> openAccountConfig() async {
+    final result = await Navigator.push<AccountConfigAction?>(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            AccountConfigPage(
+          onProfileUpdated: _refreshCurrentUserState,
+        ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curveAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          );
+          return FadeTransition(
+            opacity: curveAnimation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.04),
+                end: Offset.zero,
+              ).animate(curveAnimation),
+              child: child,
+            ),
+          );
+        },
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (result == AccountConfigAction.deleted) {
+      _clearAuthFields();
+      AdminService.instance.isAdminNotifier.value = false;
+      setState(() {
+        userName = 'Estudante';
+        userPhotoUrl = null;
+        showLogin = true;
+      });
+      _showMessage('Sua conta foi excluída com sucesso.');
+    } else if (result == AccountConfigAction.openLogin) {
+      setState(() {
+        showLogin = true;
+      });
+    } else {
+      _refreshCurrentUserState();
+    }
+  }
+
   // ==========================================================
   // BUILD PRINCIPAL
   // ==========================================================
@@ -724,48 +723,24 @@ class _DashboardPageState extends State<DashboardPage> {
   // ==========================================================
 
   Widget _buildHeader() {
+    final hasPhoto = userPhotoUrl != null && userPhotoUrl!.isNotEmpty;
     return Row(
       children: [
-        BouncingPressable(
-          onTap: _updateProfilePhotoDialog,
-          child: Stack(
-            children: [
-              CircleAvatar(
-                radius: 36,
-                backgroundColor: AppTheme.lilac,
-                backgroundImage:
-                    (userPhotoUrl != null && userPhotoUrl!.isNotEmpty)
-                        ? NetworkImage(userPhotoUrl!)
-                        : null,
-                child: (userPhotoUrl == null || userPhotoUrl!.isEmpty)
-                    ? Text(
-                        userName.isNotEmpty ? userName[0].toUpperCase() : 'E',
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      )
-                    : null,
-              ),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: AppTheme.orange,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.edit,
-                    size: 14,
+        CircleAvatar(
+          radius: 36,
+          backgroundColor: AppTheme.lilac,
+          backgroundImage: hasPhoto ? NetworkImage(userPhotoUrl!) : null,
+          onBackgroundImageError: hasPhoto ? (_, _) {} : null,
+          child: !hasPhoto
+              ? Text(
+                  userName.isNotEmpty ? userName[0].toUpperCase() : 'E',
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
-                ),
-              ),
-            ],
-          ),
+                )
+              : null,
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -1109,12 +1084,10 @@ class _DashboardPageState extends State<DashboardPage> {
             onTap: openNotes,
           ),
 
-          // Botão Central Original (Ícone original: crop_square com anel lilás)
+          // Botão Central Original (Abre a aba de Configurações da Conta)
           BouncingPressable(
-            onTap: () {
-              // Ação central
-              openCalendar();
-            },
+            key: const Key('dashboard_center_account_button'),
+            onTap: openAccountConfig,
             scaleFactor: 0.94,
             child: Container(
               width: 100,
