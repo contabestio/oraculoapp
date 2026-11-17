@@ -45,6 +45,21 @@ class NoteItem {
       createdAt: createTimestamp?.toDate() ?? DateTime.now(),
     );
   }
+
+  /// Verifica se a nota corresponde ao termo de busca (título ou conteúdo).
+  bool matchesQuery(String query) {
+    final normalized = query.trim().toLowerCase();
+    if (normalized.isEmpty) return true;
+    return title.toLowerCase().contains(normalized) ||
+        content.toLowerCase().contains(normalized);
+  }
+
+  /// Filtra uma lista de notas pelo termo de busca informado.
+  static List<NoteItem> filterNotes(List<NoteItem> notes, String query) {
+    final normalized = query.trim().toLowerCase();
+    if (normalized.isEmpty) return notes;
+    return notes.where((note) => note.matchesQuery(normalized)).toList();
+  }
 }
 
 // ==========================================================
@@ -76,11 +91,13 @@ class NoteEditorResult {
 class NotesAndInsightsPage extends StatefulWidget {
   final String? initialBookTitle;
   final String? initialBookId;
+  final Stream<List<NoteItem>>? notesStream;
 
   const NotesAndInsightsPage({
     super.key,
     this.initialBookTitle,
     this.initialBookId,
+    this.notesStream,
   });
 
   @override
@@ -88,16 +105,46 @@ class NotesAndInsightsPage extends StatefulWidget {
 }
 
 class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  FirebaseAuth? get _auth {
+    try {
+      return FirebaseAuth.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  FirebaseFirestore? get _firestore {
+    try {
+      return FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    setState(() {
+      _searchQuery = '';
+    });
+  }
 
   /// Retorna a referência da subcoleção de notas do usuário autenticado atual:
   /// users/{uid}/notes
   CollectionReference<Map<String, dynamic>>? _getUserNotesCollection() {
-    final user = _auth.currentUser;
-    if (user == null) return null;
+    final user = _auth?.currentUser;
+    final firestore = _firestore;
+    if (user == null || firestore == null) return null;
 
-    return _firestore.collection('users').doc(user.uid).collection('notes');
+    return firestore.collection('users').doc(user.uid).collection('notes');
   }
 
   /// Exibe um SnackBar informativo ou de erro.
@@ -240,32 +287,92 @@ class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Container(
-                        height: 40,
+                        key: const Key('metas_container'),
+                        height: 44,
+                        padding: const EdgeInsets.fromLTRB(12, 5, 5, 5),
                         decoration: BoxDecoration(
                           color: _orange,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(22),
                         ),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             const Icon(
                               Icons.outlined_flag,
                               color: Colors.white,
-                              size: 18,
+                              size: 17,
                             ),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                widget.initialBookTitle != null
-                                    ? 'Notas: ${widget.initialBookTitle}'
-                                    : 'Metas',
-                                style: const TextStyle(
+                            const SizedBox(width: 6),
+                            Text(
+                              widget.initialBookTitle != null
+                                  ? 'Notas'
+                                  : 'Metas',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Container(
+                                height: 34,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 10),
+                                decoration: BoxDecoration(
                                   color: Colors.white,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
+                                  borderRadius: BorderRadius.circular(18),
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.search_rounded,
+                                      color: _orange,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: TextField(
+                                        key: const Key('metas_search_field'),
+                                        controller: _searchController,
+                                        textInputAction: TextInputAction.search,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _searchQuery = value;
+                                          });
+                                        },
+                                        style: const TextStyle(
+                                          color: _darkPurple,
+                                          fontSize: 13,
+                                        ),
+                                        decoration: const InputDecoration(
+                                          hintText: 'Buscar notas...',
+                                          hintStyle: TextStyle(
+                                            color: _orange,
+                                            fontSize: 12.5,
+                                          ),
+                                          border: InputBorder.none,
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.zero,
+                                        ),
+                                      ),
+                                    ),
+                                    if (_searchQuery.isNotEmpty)
+                                      GestureDetector(
+                                        key: const Key(
+                                          'metas_search_clear_button',
+                                        ),
+                                        onTap: _clearSearch,
+                                        child: const Padding(
+                                          padding: EdgeInsets.only(left: 4),
+                                          child: Icon(
+                                            Icons.close_rounded,
+                                            color: _orange,
+                                            size: 16,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
@@ -362,102 +469,50 @@ class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
                         ),
                         const SizedBox(height: 20),
                         Expanded(
-                          child: collection == null
-                              ? _buildUnauthenticatedState()
-                              : StreamBuilder<
-                                  QuerySnapshot<Map<String, dynamic>>>(
-                                  stream: collection
-                                      .orderBy('updatedAt', descending: true)
-                                      .snapshots(),
+                          child: widget.notesStream != null
+                              ? StreamBuilder<List<NoteItem>>(
+                                  stream: widget.notesStream,
                                   builder: (context, snapshot) {
                                     if (snapshot.hasError) {
                                       return _buildErrorState(snapshot.error);
                                     }
-
                                     if (snapshot.connectionState ==
                                             ConnectionState.waiting &&
                                         !snapshot.hasData) {
-                                      // Renderiza cartões vazios interativos imediatamente enquanto carrega
-                                      return GridView.builder(
-                                        physics: const BouncingScrollPhysics(),
-                                        itemCount: 6,
-                                        gridDelegate:
-                                            const SliverGridDelegateWithFixedCrossAxisCount(
-                                          crossAxisCount: 2,
-                                          crossAxisSpacing: 16,
-                                          mainAxisSpacing: 16,
-                                          childAspectRatio: 0.85,
-                                        ),
-                                        itemBuilder: (context, index) {
-                                          return BouncingPressable(
-                                            onTap: () => _openNote(),
-                                            scaleFactor: 0.94,
-                                            child: Material(
-                                              color: Colors.white,
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                              clipBehavior: Clip.antiAlias,
-                                              child: Padding(
-                                                padding:
-                                                    const EdgeInsets.all(16),
-                                                child:
-                                                    _buildEmptyCardContent(),
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      );
+                                      return _buildPlaceholderGrid();
                                     }
-
-                                    final docs = snapshot.data?.docs ?? [];
-                                    final List<NoteItem> notes = docs
-                                        .map((doc) => NoteItem.fromFirestore(doc))
-                                        .toList();
-
-                                    final int totalCards =
-                                        notes.length < 6 ? 6 : notes.length;
-
-                                    return GridView.builder(
-                                      physics: const BouncingScrollPhysics(),
-                                      itemCount: totalCards,
-                                      gridDelegate:
-                                          const SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 2,
-                                        crossAxisSpacing: 16,
-                                        mainAxisSpacing: 16,
-                                        childAspectRatio: 0.85,
-                                      ),
-                                      itemBuilder: (context, index) {
-                                        final bool hasNote =
-                                            index < notes.length;
-
-                                        return BouncingPressable(
-                                          onTap: () => _openNote(
-                                            existingNote:
-                                                hasNote ? notes[index] : null,
-                                          ),
-                                          scaleFactor: 0.94,
-                                          child: Material(
-                                            color: Colors.white,
-                                            borderRadius:
-                                                BorderRadius.circular(20),
-                                            elevation: hasNote ? 2 : 0,
-                                            shadowColor: Colors.black.withValues(alpha: 0.1),
-                                            clipBehavior: Clip.antiAlias,
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(16),
-                                              child: hasNote
-                                                  ? _buildNoteCardContent(
-                                                      notes[index],
-                                                    )
-                                                  : _buildEmptyCardContent(),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    );
+                                    return _buildNotesGrid(snapshot.data ?? []);
                                   },
-                                ),
+                                )
+                              : collection == null
+                                  ? _buildUnauthenticatedState()
+                                  : StreamBuilder<
+                                      QuerySnapshot<Map<String, dynamic>>>(
+                                      stream: collection
+                                          .orderBy('updatedAt',
+                                              descending: true)
+                                          .snapshots(),
+                                      builder: (context, snapshot) {
+                                        if (snapshot.hasError) {
+                                          return _buildErrorState(
+                                              snapshot.error);
+                                        }
+
+                                        if (snapshot.connectionState ==
+                                                ConnectionState.waiting &&
+                                            !snapshot.hasData) {
+                                          return _buildPlaceholderGrid();
+                                        }
+
+                                        final docs = snapshot.data?.docs ?? [];
+                                        final List<NoteItem> notes = docs
+                                            .map((doc) =>
+                                                NoteItem.fromFirestore(doc))
+                                            .toList();
+
+                                        return _buildNotesGrid(notes);
+                                      },
+                                    ),
                         ),
                       ],
                     ),
@@ -480,6 +535,127 @@ class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
           elevation: 4,
           child: const Icon(Icons.add, size: 30),
         ),
+      ),
+    );
+  }
+
+  /// Grade de cartões vazios enquanto os dados são carregados.
+  Widget _buildPlaceholderGrid() {
+    return GridView.builder(
+      physics: const BouncingScrollPhysics(),
+      itemCount: 6,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.85,
+      ),
+      itemBuilder: (context, index) {
+        return BouncingPressable(
+          onTap: () => _openNote(),
+          scaleFactor: 0.94,
+          child: Material(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            clipBehavior: Clip.antiAlias,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: _buildEmptyCardContent(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Grade principal de notas filtradas pela busca.
+  Widget _buildNotesGrid(List<NoteItem> notes) {
+    final bool isSearching = _searchQuery.trim().isNotEmpty;
+    final List<NoteItem> filteredNotes =
+        NoteItem.filterNotes(notes, _searchQuery);
+
+    if (isSearching && filteredNotes.isEmpty) {
+      return _buildEmptySearchState();
+    }
+
+    final int totalCards = isSearching
+        ? filteredNotes.length
+        : (filteredNotes.length < 6 ? 6 : filteredNotes.length);
+
+    return GridView.builder(
+      physics: const BouncingScrollPhysics(),
+      itemCount: totalCards,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.85,
+      ),
+      itemBuilder: (context, index) {
+        final bool hasNote = index < filteredNotes.length;
+
+        return BouncingPressable(
+          onTap: () => _openNote(
+            existingNote: hasNote ? filteredNotes[index] : null,
+          ),
+          scaleFactor: 0.94,
+          child: Material(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            elevation: hasNote ? 2 : 0,
+            shadowColor: Colors.black.withValues(alpha: 0.1),
+            clipBehavior: Clip.antiAlias,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: hasNote
+                  ? _buildNoteCardContent(filteredNotes[index])
+                  : _buildEmptyCardContent(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Estado exibido quando a busca não retorna nenhuma nota.
+  Widget _buildEmptySearchState() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.search_off_rounded,
+            color: Colors.white,
+            size: 46,
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Nenhuma nota encontrada',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Nenhum resultado para "${_searchQuery.trim()}".',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white70, fontSize: 13),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _clearSearch,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: _darkPurple,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: const Text('Limpar busca'),
+          ),
+        ],
       ),
     );
   }
