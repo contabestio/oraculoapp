@@ -666,26 +666,31 @@ class _DashboardPageState extends State<DashboardPage> {
               // CONTEÚDO PRINCIPAL COM ANIMAÇÃO DE ENTRADA
               // ======================================================
               SafeArea(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(24, 40, 24, 160),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // CABEÇALHO DO PERFIL COM CORES ORIGINAIS E ANIMAÇÃO
-                      FadeSlideTransition(
-                        delay: const Duration(milliseconds: 100),
-                        child: _buildHeader(),
-                      ),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 760),
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(24, 40, 24, 160),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // CABEÇALHO DO PERFIL COM CORES ORIGINAIS E ANIMAÇÃO
+                          FadeSlideTransition(
+                            delay: const Duration(milliseconds: 100),
+                            child: _buildHeader(),
+                          ),
 
-                      const SizedBox(height: 32),
+                          const SizedBox(height: 32),
 
-                      // CONTAINER PRINCIPAL: MEUS MATERIAIS
-                      FadeSlideTransition(
-                        delay: const Duration(milliseconds: 200),
-                        child: _buildMaterialsContainer(filteredMaterials),
+                          // CONTAINER PRINCIPAL: MEUS MATERIAIS
+                          FadeSlideTransition(
+                            delay: const Duration(milliseconds: 200),
+                            child: _buildMaterialsContainer(filteredMaterials),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -929,7 +934,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
           // Carrossel de Livros com efeito 3D
           SizedBox(
-            height: 205,
+            height: BookCoverCard.standardHeight,
             child: filteredMaterials.isEmpty
               ? const Center(
                   child: Text(
@@ -945,7 +950,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   itemBuilder: (context, index) {
                     final item = filteredMaterials[index];
                     return SizedBox(
-                      width: 125,
+                      width: BookCoverCard.standardWidth,
                       child: BookCoverCard(
                         title: item.title,
                         imageUrl: item.imageUrl,
@@ -1072,48 +1077,55 @@ class _DashboardPageState extends State<DashboardPage> {
     return Container(
       height: 145,
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(24, 10, 24, 35),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Botão Notas (Ícone original: edit_note)
-          _BottomButton(
-            icon: Icons.edit_note,
-            size: 70,
-            onTap: openNotes,
-          ),
-
-          // Botão Central Original (Abre a aba de Configurações da Conta)
-          BouncingPressable(
-            key: const Key('dashboard_center_account_button'),
-            onTap: openAccountConfig,
-            scaleFactor: 0.94,
-            child: Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppTheme.lilac,
-                  width: 4,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 10, 24, 35),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Botão Notas (Ícone original: edit_note)
+                _BottomButton(
+                  icon: Icons.edit_note,
+                  size: 70,
+                  onTap: openNotes,
                 ),
-              ),
-              child: const Icon(
-                Icons.crop_square,
-                color: AppTheme.lilac,
-                size: 58,
-              ),
+
+                // Botão Central Original (Abre a aba de Configurações da Conta)
+                BouncingPressable(
+                  key: const Key('dashboard_center_account_button'),
+                  onTap: openAccountConfig,
+                  scaleFactor: 0.94,
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppTheme.lilac,
+                        width: 4,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.crop_square,
+                      color: AppTheme.lilac,
+                      size: 58,
+                    ),
+                  ),
+                ),
+
+                // Botão Calendário (Ícone original: calendar_month)
+                _BottomButton(
+                  icon: Icons.calendar_month,
+                  size: 70,
+                  onTap: openCalendar,
+                ),
+              ],
             ),
           ),
-
-          // Botão Calendário (Ícone original: calendar_month)
-          _BottomButton(
-            icon: Icons.calendar_month,
-            size: 70,
-            onTap: openCalendar,
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -299,14 +299,18 @@ class _DevBookEditorSheetState extends State<DevBookEditorSheet> {
     final isEditing = widget.bookToEdit != null;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.90,
-      margin: EdgeInsets.only(bottom: bottomInset),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      child: Column(
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 780),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.90,
+          margin: EdgeInsets.only(bottom: bottomInset),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
         children: [
           // Barra de Arraste Superior
           Center(
@@ -1002,6 +1006,8 @@ class _DevBookEditorSheetState extends State<DevBookEditorSheet> {
           ),
         ],
       ),
+    ),
+    ),
     );
   }
 

@@ -476,23 +476,27 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
       builder: (bottomSheetContext) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            return Container(
-              padding: EdgeInsets.only(
-                left: 24,
-                right: 24,
-                top: 24,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-              ),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Center(
+            return Align(
+              alignment: Alignment.bottomCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Container(
+                  padding: EdgeInsets.only(
+                    left: 24,
+                    right: 24,
+                    top: 24,
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+                  ),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Center(
                       child: Container(
                         width: 40,
                         height: 4,
@@ -676,8 +680,10 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
                   ],
                 ),
               ),
-            );
-          },
+            ),
+          ),
+        );
+      },
         );
       },
     );
@@ -695,10 +701,13 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
-            children: [
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 820),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Column(
+                children: [
               // BARRA SUPERIOR ORIGINAL COM ANIMAÇÃO
               FadeSlideTransition(
                 delay: const Duration(milliseconds: 50),
@@ -1117,7 +1126,9 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 }
 

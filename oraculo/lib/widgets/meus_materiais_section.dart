@@ -42,10 +42,10 @@ class MeusMateriaisSection extends StatelessWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 170,
-            childAspectRatio: 0.58,
-            crossAxisSpacing: 24,
-            mainAxisSpacing: 28,
+            maxCrossAxisExtent: BookCoverCard.standardWidth + 24,
+            childAspectRatio: BookCoverCard.standardAspectRatio,
+            crossAxisSpacing: 20,
+            mainAxisSpacing: 24,
           ),
           itemCount: books.length,
           itemBuilder: (context, index) {

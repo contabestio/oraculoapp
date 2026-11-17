@@ -262,10 +262,13 @@ class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Column(
-            children: [
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 820),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: Column(
+                children: [
               // ------------------------------------------------------
               // BARRA SUPERIOR ORIGINAL COM ANIMAÇÃO
               // ------------------------------------------------------
@@ -523,6 +526,8 @@ class _NotesAndInsightsPageState extends State<NotesAndInsightsPage> {
           ),
         ),
       ),
+    ),
+  ),
 
       // Botão flutuante original com compressão animada
       floatingActionButton: BouncingPressable(
@@ -945,9 +950,12 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         ],
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 820),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
             children: [
               TextField(
                 controller: _titleController,
@@ -1025,6 +1033,8 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 }

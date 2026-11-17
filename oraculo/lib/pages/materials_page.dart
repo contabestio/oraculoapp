@@ -70,8 +70,11 @@ class _MaterialsPageState extends State<MaterialsPage> {
             return Scaffold(
               backgroundColor: Colors.white,
               body: SafeArea(
-                child: Column(
-                  children: [
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1000),
+                    child: Column(
+                      children: [
                     // ======================================================
                     // BARRA SUPERIOR COM CORES ORIGINAIS
                     // ======================================================
@@ -589,71 +592,84 @@ class _MaterialsPageState extends State<MaterialsPage> {
                             )
                           : FadeSlideTransition(
                               delay: const Duration(milliseconds: 100),
-                              child: GridView.builder(
-                                physics: const BouncingScrollPhysics(),
-                                padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  childAspectRatio: 0.60,
-                                  crossAxisSpacing: 18,
-                                  mainAxisSpacing: 22,
-                                ),
-                                itemCount: filteredList.length,
-                                itemBuilder: (context, index) {
-                                  final item = filteredList[index];
-                                  return Stack(
-                                    children: [
-                                      // Cartão do livro clicável (Abre a página de leitura para qualquer usuário)
-                                      Positioned.fill(
-                                        child: BookCoverCard(
-                                          title: item.title,
-                                          imageUrl: item.imageUrl,
-                                          onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    BookDetailsPage(
-                                                        initialBook: item),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                      // Botão de atalho rápido de edição (Visível APENAS para contas de Administrador)
-                                      if (isAdmin)
-                                        Positioned(
-                                          top: 4,
-                                          right: 4,
-                                          child: BouncingPressable(
-                                            onTap: () => DevBookEditorSheet.show(
-                                              context,
-                                              book: item,
-                                            ),
-                                            child: Container(
-                                              padding: const EdgeInsets.all(6),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFF1E293B)
-                                                    .withValues(alpha: 0.85),
-                                                shape: BoxShape.circle,
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: Colors.black
-                                                        .withValues(alpha: 0.2),
-                                                    blurRadius: 4,
+                              child: LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final double availableWidth = constraints.maxWidth;
+                                  const double bookWidth = BookCoverCard.standardWidth;
+                                  const double spacing = 18.0;
+
+                                  int crossAxisCount =
+                                      ((availableWidth - 40 + spacing) / (bookWidth + spacing)).floor();
+                                  if (crossAxisCount < 2) crossAxisCount = 2;
+                                  if (crossAxisCount > 6) crossAxisCount = 6;
+
+                                  return GridView.builder(
+                                    physics: const BouncingScrollPhysics(),
+                                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                                    gridDelegate:
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: crossAxisCount,
+                                      childAspectRatio: BookCoverCard.standardAspectRatio,
+                                      crossAxisSpacing: 18,
+                                      mainAxisSpacing: 22,
+                                    ),
+                                    itemCount: filteredList.length,
+                                    itemBuilder: (context, index) {
+                                      final item = filteredList[index];
+                                      return Stack(
+                                        children: [
+                                          // Cartão do livro clicável (Abre a página de leitura para qualquer usuário)
+                                          Positioned.fill(
+                                            child: BookCoverCard(
+                                              title: item.title,
+                                              imageUrl: item.imageUrl,
+                                              onTap: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        BookDetailsPage(
+                                                            initialBook: item),
                                                   ),
-                                                ],
-                                              ),
-                                              child: const Icon(
-                                                Icons.edit_rounded,
-                                                color: Colors.white,
-                                                size: 14,
-                                              ),
+                                                );
+                                              },
                                             ),
                                           ),
-                                        ),
-                                    ],
+                                          // Botão de atalho rápido de edição (Visível APENAS para contas de Administrador)
+                                          if (isAdmin)
+                                            Positioned(
+                                              top: 4,
+                                              right: 4,
+                                              child: BouncingPressable(
+                                                onTap: () => DevBookEditorSheet.show(
+                                                  context,
+                                                  book: item,
+                                                ),
+                                                child: Container(
+                                                  padding: const EdgeInsets.all(6),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFF1E293B)
+                                                        .withValues(alpha: 0.85),
+                                                    shape: BoxShape.circle,
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                        color: Colors.black
+                                                            .withValues(alpha: 0.2),
+                                                        blurRadius: 4,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.edit_rounded,
+                                                    color: Colors.white,
+                                                    size: 14,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      );
+                                    },
                                   );
                                 },
                               ),
@@ -662,8 +678,10 @@ class _MaterialsPageState extends State<MaterialsPage> {
                   ],
                 ),
               ),
-            );
-          },
+            ),
+          ),
+        );
+      },
         );
       },
     );

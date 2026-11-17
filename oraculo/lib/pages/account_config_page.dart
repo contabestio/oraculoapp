@@ -352,8 +352,11 @@ class _AccountConfigPageState extends State<AccountConfigPage> {
       child: Scaffold(
         backgroundColor: Colors.white,
         body: SafeArea(
-          child: Column(
-            children: [
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 820),
+              child: Column(
+                children: [
               _buildTopBar(),
               Expanded(
                 child: SingleChildScrollView(
@@ -396,7 +399,9 @@ class _AccountConfigPageState extends State<AccountConfigPage> {
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildTopBar() {

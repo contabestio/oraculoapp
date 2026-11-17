@@ -174,36 +174,39 @@ class _BookDetailsPageState extends State<BookDetailsPage> {
               const SizedBox(width: 8),
             ],
           ),
-          body: SingleChildScrollView(
-            controller: _scrollController,
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // ========================================================
-                // CABEÇALHO DO LIVRO COM CAPA E RESUMO
-                // ========================================================
-                Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceSoft,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: const Color(0xFFF0EAE1)),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Miniatura 3D da Capa
-                      SizedBox(
-                        width: 95,
-                        height: 140,
-                        child: BookCoverCard(
-                          title: '',
-                          imageUrl: book.imageUrl,
-                          onTap: () {},
-                        ),
+          body: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 860),
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // ========================================================
+                    // CABEÇALHO DO LIVRO COM CAPA E RESUMO
+                    // ========================================================
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceSoft,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: const Color(0xFFF0EAE1)),
                       ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Miniatura 3D da Capa
+                          SizedBox(
+                            width: 100,
+                            height: 100 / BookCoverCard.standardAspectRatio,
+                            child: BookCoverCard(
+                              title: '',
+                              imageUrl: book.imageUrl,
+                              onTap: () {},
+                            ),
+                          ),
                       const SizedBox(width: 16),
                       // Detalhes textuais
                       Expanded(
@@ -993,7 +996,9 @@ class _BookDetailsPageState extends State<BookDetailsPage> {
               ],
             ),
           ),
-        );
+        ),
+      ),
+    );
       },
     );
   }
