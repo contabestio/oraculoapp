@@ -38,10 +38,10 @@ class _BookCoverCardState extends State<BookCoverCard> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final hasBoundedHeight = constraints.hasBoundedHeight;
-        final effectiveWidth = widget.width;
+        final effectiveWidth =
+            widget.width ?? (constraints.hasTightWidth ? null : BookCoverCard.standardWidth);
         final effectiveHeight =
-            widget.height ?? (hasBoundedHeight ? null : BookCoverCard.standardHeight);
+            widget.height ?? (constraints.hasTightHeight ? null : BookCoverCard.standardHeight);
 
         final Widget bookCover = AnimatedContainer(
           duration: const Duration(milliseconds: 350),

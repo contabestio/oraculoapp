@@ -361,7 +361,7 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
 
     if (collection != null) {
       try {
-        await collection.add({
+        final docRef = await collection.add({
           'title': title,
           'time': time,
           'dateKey': dateKey,
@@ -372,7 +372,15 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         });
-        _showMessage('Evento salvo com sucesso na nuvem!');
+        await EventNotificationService.instance.notifyEventScheduled(
+          taskId: docRef.id,
+          title: title,
+          time: time,
+          dateKey: dateKey,
+          category: selectedOption.label,
+          context: mounted ? context : null,
+        );
+        _showMessage('Evento salvo na nuvem e notificação ativada!');
         return;
       } on FirebaseException catch (e) {
         debugPrint('FirebaseException addTask: [${e.code}] ${e.message}');
@@ -410,22 +418,30 @@ class _DatesAndTasksPageState extends State<DatesAndTasksPage> {
     });
     await _saveLocalTasks();
 
-    // Notifica o serviço de notificações para verificar se vence nas próximas 24h
-    if (mounted) {
-      EventNotificationService.instance.checkUpcomingEvents(context: context);
-    }
+    // Dispara notificação no Android e verifica vencimento em 24h
+    await EventNotificationService.instance.notifyEventScheduled(
+      taskId: newTask.id,
+      title: title,
+      time: time,
+      dateKey: dateKey,
+      category: selectedOption.label,
+      context: mounted ? context : null,
+    );
 
     _showMessage(
       collection == null
-          ? 'Evento salvo no aparelho! Conecte sua conta para salvar na nuvem.'
-          : 'Evento salvo localmente no aparelho.',
+          ? 'Evento salvo no aparelho e notificação ativada!'
+          : 'Evento salvo localmente e notificação ativada.',
     );
   }
 
   // Deletar Tarefa
   Future<void> _deleteTask(String taskId, String dateKey) async {
     final collection = _getUserTasksCollection();
-    EventNotificationService.instance.removeNotificationForTask(taskId);
+    await EventNotificationService.instance.removeNotificationForTask(
+      taskId,
+      dateKey: dateKey,
+    );
 
     // Se for tarefa local persistida
     if (taskId.startsWith('local_') ||

@@ -32,7 +32,7 @@ class _DashboardPageState extends State<DashboardPage> {
   // FIREBASE
   // ==========================================================
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  FirebaseAuth get _auth => FirebaseAuth.instance;
 
   // ==========================================================
   // ESTADO
@@ -69,23 +69,27 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     _loadSavedUser();
-    _authSubscription = _auth.authStateChanges().listen((user) {
-      if (!mounted) return;
-      AdminService.instance.checkAdminStatus(user);
-      setState(() {
-        if (user != null) {
-          userName = user.displayName?.trim().isNotEmpty == true
-              ? user.displayName!
-              : 'Estudante';
-          userPhotoUrl = user.photoURL;
-          showLogin = false;
-        } else {
-          userName = 'Estudante';
-          userPhotoUrl = null;
-          showLogin = true;
-        }
+    try {
+      _authSubscription = _auth.authStateChanges().listen((user) {
+        if (!mounted) return;
+        AdminService.instance.checkAdminStatus(user);
+        setState(() {
+          if (user != null) {
+            userName = user.displayName?.trim().isNotEmpty == true
+                ? user.displayName!
+                : 'Estudante';
+            userPhotoUrl = user.photoURL;
+            showLogin = false;
+          } else {
+            userName = 'Estudante';
+            userPhotoUrl = null;
+            showLogin = true;
+          }
+        });
       });
-    });
+    } catch (e) {
+      debugPrint('Auth subscription error: $e');
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         EventNotificationService.instance.checkUpcomingEvents(context: context);
@@ -576,15 +580,17 @@ class _DashboardPageState extends State<DashboardPage> {
 
   void _refreshCurrentUserState() {
     if (!mounted) return;
-    final User? user = _auth.currentUser;
-    if (user != null) {
-      setState(() {
-        userName = user.displayName?.trim().isNotEmpty == true
-            ? user.displayName!.trim()
-            : (user.email?.split('@').first ?? 'Estudante');
-        userPhotoUrl = user.photoURL;
-      });
-    }
+    try {
+      final User? user = _auth.currentUser;
+      if (user != null) {
+        setState(() {
+          userName = user.displayName?.trim().isNotEmpty == true
+              ? user.displayName!.trim()
+              : (user.email?.split('@').first ?? 'Estudante');
+          userPhotoUrl = user.photoURL;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> openAccountConfig() async {
@@ -666,12 +672,19 @@ class _DashboardPageState extends State<DashboardPage> {
               // CONTEÚDO PRINCIPAL COM ANIMAÇÃO DE ENTRADA
               // ======================================================
               SafeArea(
-                child: Center(
+                bottom: false,
+                child: Align(
+                  alignment: Alignment.topCenter,
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 760),
                     child: SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(24, 40, 24, 160),
+                      padding: EdgeInsets.fromLTRB(
+                        24,
+                        24,
+                        24,
+                        140 + MediaQuery.of(context).padding.bottom,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -681,7 +694,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             child: _buildHeader(),
                           ),
 
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 28),
 
                           // CONTAINER PRINCIPAL: MEUS MATERIAIS
                           FadeSlideTransition(
@@ -751,9 +764,12 @@ class _DashboardPageState extends State<DashboardPage> {
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
                 'Bem-vindo(a) ao Oráculo',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontFamily: 'Georgia',
                   color: AppTheme.orange,
@@ -1075,54 +1091,59 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildBottomNav() {
     return Container(
-      height: 145,
       color: Colors.white,
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 500),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 10, 24, 35),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Botão Notas (Ícone original: edit_note)
-                _BottomButton(
-                  icon: Icons.edit_note,
-                  size: 70,
-                  onTap: openNotes,
-                ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 124,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 500),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Botão Notas (Ícone original: edit_note)
+                    _BottomButton(
+                      icon: Icons.edit_note,
+                      size: 70,
+                      onTap: openNotes,
+                    ),
 
-                // Botão Central Original (Abre a aba de Configurações da Conta)
-                BouncingPressable(
-                  key: const Key('dashboard_center_account_button'),
-                  onTap: openAccountConfig,
-                  scaleFactor: 0.94,
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppTheme.lilac,
-                        width: 4,
+                    // Botão Central Original (Abre a aba de Configurações da Conta)
+                    BouncingPressable(
+                      key: const Key('dashboard_center_account_button'),
+                      onTap: openAccountConfig,
+                      scaleFactor: 0.94,
+                      child: Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppTheme.lilac,
+                            width: 4,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.crop_square,
+                          color: AppTheme.lilac,
+                          size: 58,
+                        ),
                       ),
                     ),
-                    child: const Icon(
-                      Icons.crop_square,
-                      color: AppTheme.lilac,
-                      size: 58,
-                    ),
-                  ),
-                ),
 
-                // Botão Calendário (Ícone original: calendar_month)
-                _BottomButton(
-                  icon: Icons.calendar_month,
-                  size: 70,
-                  onTap: openCalendar,
+                    // Botão Calendário (Ícone original: calendar_month)
+                    _BottomButton(
+                      icon: Icons.calendar_month,
+                      size: 70,
+                      onTap: openCalendar,
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),

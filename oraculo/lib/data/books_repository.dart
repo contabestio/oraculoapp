@@ -20,7 +20,7 @@ class BooksRepository {
   static final BooksRepository instance = BooksRepository._();
 
   static const String _storageKey = 'oraculo_dev_custom_books_v2';
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  FirebaseFirestore get _firestore => FirebaseFirestore.instance;
 
   final ValueNotifier<List<BookModel>> booksNotifier =
       ValueNotifier<List<BookModel>>(universalBooksCatalog);
